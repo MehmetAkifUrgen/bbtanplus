@@ -1,7 +1,29 @@
 import 'package:flutter/material.dart';
+import '../models/game_state.dart';
 
-class MainMenuScreen extends StatelessWidget {
+class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({super.key});
+  
+  @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
+  bool _hasSavedGame = false;
+  final GameState _gameState = GameState();
+  
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedGame();
+  }
+  
+  Future<void> _checkSavedGame() async {
+    final hasSaved = await _gameState.hasSavedGame();
+    setState(() {
+      _hasSavedGame = hasSaved;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +65,24 @@ class MainMenuScreen extends StatelessWidget {
               const SizedBox(height: 60),
               
               // Menu Buttons
+              if (_hasSavedGame) ...[
+                _buildMenuButton(
+                  context,
+                  'DEVAM ET',
+                  Icons.play_circle_filled,
+                  () async {
+                    final success = await _gameState.loadGameState();
+                    if (success && mounted) {
+                      Navigator.pushNamed(context, '/game', arguments: {
+                        'resumeGame': true,
+                        'gameState': _gameState,
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+              
               _buildMenuButton(
                 context,
                 'LEVELS',

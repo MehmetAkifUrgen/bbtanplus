@@ -21,8 +21,9 @@ class Level {
   final List<List<BrickType?>> brickLayout;
   final int targetScore;
   final int maxBalls;
+  final int baseHitPoints; // Base hit points for bricks in this level
   final Duration? timeLimit;
-  final List<String> availablePowerUps;
+
   final Map<String, dynamic>? specialRules;
   bool isUnlocked;
   bool isCompleted;
@@ -39,8 +40,9 @@ class Level {
     required this.brickLayout,
     required this.targetScore,
     required this.maxBalls,
+    required this.baseHitPoints,
     this.timeLimit,
-    required this.availablePowerUps,
+
     this.specialRules,
     this.isUnlocked = false,
     this.isCompleted = false,
@@ -95,8 +97,9 @@ class Level {
         row.map((brick) => brick?.index).toList()).toList(),
     'targetScore': targetScore,
     'maxBalls': maxBalls,
+    'baseHitPoints': baseHitPoints,
     'timeLimit': timeLimit?.inSeconds,
-    'availablePowerUps': availablePowerUps,
+
     'specialRules': specialRules,
     'isUnlocked': isUnlocked,
     'isCompleted': isCompleted,
@@ -116,9 +119,10 @@ class Level {
             brick != null ? BrickType.values[brick] : null).toList()).toList(),
     targetScore: json['targetScore'],
     maxBalls: json['maxBalls'],
+    baseHitPoints: json['baseHitPoints'] ?? 1,
     timeLimit: json['timeLimit'] != null ? 
         Duration(seconds: json['timeLimit']) : null,
-    availablePowerUps: List<String>.from(json['availablePowerUps']),
+
     specialRules: json['specialRules'],
     isUnlocked: json['isUnlocked'] ?? false,
     isCompleted: json['isCompleted'] ?? false,

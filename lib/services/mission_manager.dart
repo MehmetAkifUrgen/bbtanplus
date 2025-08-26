@@ -35,15 +35,7 @@ class MissionManager {
         targetValue: 100,
         rewardPoints: 50,
       ),
-      Mission(
-        id: 'collect_10_powerups',
-        title: 'Power Collector',
-        description: 'Collect 10 power-ups',
-        type: MissionType.collectPowerUps,
-        difficulty: MissionDifficulty.easy,
-        targetValue: 10,
-        rewardPoints: 30,
-      ),
+
       Mission(
         id: 'score_5000',
         title: 'Score Master',
@@ -69,18 +61,7 @@ class MissionManager {
     _checkCompletedMissions();
   }
 
-  void onPowerUpCollected(PowerUpType powerUpType) {
-    for (var mission in _activeMissions) {
-      if (mission.type == MissionType.collectPowerUps) {
-        mission.updateProgress(1);
-      } else if (mission.type == MissionType.useSpecificPowerUp) {
-        if (mission.additionalData?['powerUpType'] == powerUpType.index) {
-          mission.updateProgress(1);
-        }
-      }
-    }
-    _checkCompletedMissions();
-  }
+
 
   void onScoreAchieved(int score) {
     for (var mission in _activeMissions) {
@@ -154,16 +135,7 @@ class MissionManager {
           targetValue: _getTargetForDifficulty(difficulty, 50),
           rewardPoints: _getRewardForDifficulty(difficulty, 25),
         );
-      case MissionType.collectPowerUps:
-        return Mission(
-          id: 'collect_${DateTime.now().millisecondsSinceEpoch}',
-          title: 'Power Hunter',
-          description: 'Collect ${_getTargetForDifficulty(difficulty, 5)} power-ups',
-          type: type,
-          difficulty: difficulty,
-          targetValue: _getTargetForDifficulty(difficulty, 5),
-          rewardPoints: _getRewardForDifficulty(difficulty, 20),
-        );
+
       case MissionType.achieveScore:
         return Mission(
           id: 'score_${DateTime.now().millisecondsSinceEpoch}',

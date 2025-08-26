@@ -1,9 +1,7 @@
 enum MissionType {
   destroyBricks,
-  collectPowerUps,
   surviveTime,
   achieveScore,
-  useSpecificPowerUp,
   destroySpecificBrickType,
 }
 

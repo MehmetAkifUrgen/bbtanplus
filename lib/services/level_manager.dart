@@ -28,8 +28,81 @@ class LevelManager {
   }
 
   void _generateLevels() {
+    // Generate first 10 levels if empty, more will be generated dynamically
+    if (_levels.isEmpty) {
+      _levels = [];
+      for (int i = 1; i <= 10; i++) {
+        _levels.add(_generateLevel(i));
+      }
+      _levels[0].isUnlocked = true;
+    }
+  }
+  
+  Level _generateLevel(int levelNumber) {
+    // Calculate dynamic values based on level
+    final baseRows = 3 + (levelNumber - 1) ~/ 3; // Increase rows every 3 levels
+    final baseCols = 8 + (levelNumber - 1) ~/ 2; // Increase columns every 2 levels
+    final maxRows = 12; // Cap at 12 rows
+    final maxCols = 20; // Cap at 20 columns
+    
+    final rows = baseRows > maxRows ? maxRows : baseRows;
+    final columns = baseCols > maxCols ? maxCols : baseCols;
+    
+    // Increase ball count and brick health with level
+    final maxBalls = 5 + (levelNumber - 1) * 2; // 2 more balls per level
+    final targetScore = 500 + (levelNumber - 1) * 300; // Increase target score
+    final baseHitPoints = levelNumber; // Increase hit points every level (more aggressive)
+    
+    // Determine difficulty based on level
+    LevelDifficulty difficulty;
+    if (levelNumber <= 5) {
+      difficulty = LevelDifficulty.beginner;
+    } else if (levelNumber <= 15) {
+      difficulty = LevelDifficulty.easy;
+    } else if (levelNumber <= 30) {
+      difficulty = LevelDifficulty.medium;
+    } else if (levelNumber <= 50) {
+      difficulty = LevelDifficulty.hard;
+    } else {
+      difficulty = LevelDifficulty.expert;
+    }
+    
+    return Level(
+      levelNumber: levelNumber,
+      name: "Level $levelNumber",
+      description: "Challenge level $levelNumber",
+      difficulty: difficulty,
+      rows: rows,
+      columns: columns,
+      brickLayout: _generateDynamicLayout(rows, columns, levelNumber),
+      targetScore: targetScore,
+      maxBalls: maxBalls,
+      baseHitPoints: baseHitPoints,
+
+      isUnlocked: levelNumber == 1,
+    );
+  }
+  
+
+  
+  List<List<BrickType?>> _generateDynamicLayout(int rows, int columns, int levelNumber) {
+    // Generate layout based on level number
+    if (levelNumber <= 5) {
+      return _generateSimpleLayout(rows, columns);
+    } else if (levelNumber <= 10) {
+      return _generateMixedLayout(rows, columns);
+    } else if (levelNumber <= 20) {
+      return _generateExplosiveLayout(rows, columns);
+    } else if (levelNumber <= 30) {
+      return _generateTimeLayout(rows, columns);
+    } else {
+      return _generateComplexLayout(rows, columns);
+    }
+  }
+  
+  // Keep original first level for compatibility
+  void _generateOriginalLevels() {
     _levels = [
-      // Beginner levels (1-5)
       Level(
         levelNumber: 1,
         name: "First Steps",
@@ -40,7 +113,8 @@ class LevelManager {
         brickLayout: _generateSimpleLayout(3, 8),
         targetScore: 500,
         maxBalls: 5,
-        availablePowerUps: ['timeFreeze'],
+        baseHitPoints: 1,
+
         isUnlocked: true,
       ),
       Level(
@@ -53,7 +127,8 @@ class LevelManager {
         brickLayout: _generateMixedLayout(4, 8),
         targetScore: 800,
         maxBalls: 6,
-        availablePowerUps: ['timeFreeze', 'cloneBall'],
+        baseHitPoints: 1,
+
       ),
       Level(
         levelNumber: 3,
@@ -65,7 +140,8 @@ class LevelManager {
         brickLayout: _generateExplosiveLayout(4, 10),
         targetScore: 1200,
         maxBalls: 7,
-        availablePowerUps: ['timeFreeze', 'cloneBall'],
+        baseHitPoints: 2,
+
       ),
       Level(
         levelNumber: 4,
@@ -77,7 +153,8 @@ class LevelManager {
         brickLayout: _generateTimeLayout(5, 10),
         targetScore: 1500,
         maxBalls: 8,
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+        baseHitPoints: 2,
+
       ),
       Level(
         levelNumber: 5,
@@ -89,7 +166,8 @@ class LevelManager {
         brickLayout: _generateTeleportLayout(5, 12),
         targetScore: 2000,
         maxBalls: 10,
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+        baseHitPoints: 3,
+
       ),
       
       // Medium levels (6-10)
@@ -103,8 +181,9 @@ class LevelManager {
         brickLayout: _generateComplexLayout(6, 12),
         targetScore: 2500,
         maxBalls: 12,
+        baseHitPoints: 3,
         timeLimit: Duration(minutes: 3),
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+
       ),
       Level(
         levelNumber: 7,
@@ -116,8 +195,9 @@ class LevelManager {
         brickLayout: _generateSpeedLayout(5, 15),
         targetScore: 3000,
         maxBalls: 15,
+        baseHitPoints: 4,
         timeLimit: Duration(minutes: 2),
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+
       ),
       Level(
         levelNumber: 8,
@@ -129,7 +209,8 @@ class LevelManager {
         brickLayout: _generateFortressLayout(7, 12),
         targetScore: 3500,
         maxBalls: 18,
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+        baseHitPoints: 4,
+
       ),
       Level(
         levelNumber: 9,
@@ -141,8 +222,9 @@ class LevelManager {
         brickLayout: _generateChaosLayout(8, 15),
         targetScore: 4000,
         maxBalls: 20,
+        baseHitPoints: 5,
         timeLimit: Duration(minutes: 4),
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+
       ),
       Level(
         levelNumber: 10,
@@ -154,8 +236,9 @@ class LevelManager {
         brickLayout: _generateMasterLayout(10, 18),
         targetScore: 5000,
         maxBalls: 25,
+        baseHitPoints: 5,
         timeLimit: Duration(minutes: 5),
-        availablePowerUps: ['timeFreeze', 'cloneBall', 'laserBall'],
+
       ),
     ];
   }
@@ -282,9 +365,23 @@ class LevelManager {
   }
 
   void selectLevel(int levelIndex) {
+    // Generate more levels if needed
+    _ensureLevelExists(levelIndex + 1);
+    
     if (levelIndex >= 0 && levelIndex < _levels.length && _levels[levelIndex].isUnlocked) {
       _currentLevelIndex = levelIndex;
     }
+  }
+  
+  void _ensureLevelExists(int levelNumber) {
+    while (_levels.length < levelNumber) {
+      _levels.add(_generateLevel(_levels.length + 1));
+    }
+  }
+  
+  Level? getLevel(int levelNumber) {
+    _ensureLevelExists(levelNumber);
+    return levelNumber > 0 && levelNumber <= _levels.length ? _levels[levelNumber - 1] : null;
   }
 
   bool isLevelUnlocked(int levelIndex) {

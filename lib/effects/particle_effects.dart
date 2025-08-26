@@ -46,26 +46,7 @@ class ParticleEffects {
     );
   }
 
-  static ParticleSystemComponent createPowerUpEffect(Vector2 position, Color color) {
-    return ParticleSystemComponent(
-      particle: Particle.generate(
-        count: 10,
-        lifespan: 0.8,
-        generator: (i) => AcceleratedParticle(
-          acceleration: Vector2(0, -50),
-          speed: Vector2(
-            (Random().nextDouble() - 0.5) * 100,
-            -Random().nextDouble() * 50 - 25,
-          ),
-          position: position.clone(),
-          child: CircleParticle(
-            radius: Random().nextDouble() * 2 + 1,
-            paint: Paint()..color = color.withValues(alpha: 0.7),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   static ParticleSystemComponent createTrailEffect(Vector2 position, Color color) {
     return ParticleSystemComponent(

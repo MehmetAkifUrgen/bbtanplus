@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
@@ -5,24 +6,23 @@ import 'package:flame/collisions.dart';
 import 'package:flutter/material.dart';
 import '../components/ball.dart';
 import '../components/brick.dart';
-import '../components/power_up.dart';
 import '../models/game_state.dart';
 import '../services/audio_manager.dart';
-import '../services/mission_manager.dart';
-import '../services/level_manager.dart';
 import '../services/theme_manager.dart';
+import '../services/level_manager.dart';
+import '../services/mission_manager.dart';
 import '../effects/particle_effects.dart';
 import '../models/level.dart';
 
 class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   final Level? selectedLevel;
+  Level? currentLevel; // Current level being played
   
   CrystalBreakerGame({this.selectedLevel});
   late GameState gameState;
   Ball? ball;
   List<Ball> balls = []; // Track multiple balls
   late List<Brick> bricks;
-  late List<PowerUp> powerUps;
   late AudioManager audioManager;
   late MissionManager missionManager;
   late LevelManager levelManager;
@@ -36,12 +36,25 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   int level = 1;
   int ballsRemaining = 1;
   
+  // Player health and burning system
+  int playerLives = 3;
+  bool isBurning = false;
+  double burnDuration = 0.0;
+  double burnDamageTimer = 0.0;
+  double burnDamageInterval = 1.0; // Damage every second
+  
+  // Dragon fire attack system removed
+  
   // Game constants
-  static const double ballSpeed = 600.0;
-  static const double brickRowHeight = 60.0;
-  static const double brickWidth = 80.0;
-  static const double brickHeight = 50.0;
-  static const int bricksPerRow = 7;
+  static const double baseBallSpeed = 600.0;
+  static const double brickRowHeight = 45.0; // Reduced for tighter spacing
+  static const double brickWidth = 60.0; // Match brick component size
+  static const double brickHeight = 35.0; // Match brick component size
+  static const int bricksPerRow = 9; // Increased to fit more characters
+  
+  // Dynamic difficulty properties
+  double get currentBallSpeed => baseBallSpeed; // Keep ball speed constant
+  int get maxBallsPerLevel => (level * 2).clamp(1, 20); // More balls as level increases - 2 balls per level
   
   @override
   Future<void> onLoad() async {
@@ -50,7 +63,9 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     // Initialize core components first
     gameState = GameState();
     bricks = [];
-    powerUps = [];
+    
+    // Set current level
+    currentLevel = selectedLevel;
     
     // Set up camera
     camera.viewfinder.visibleGameSize = size;
@@ -65,8 +80,9 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
     ball = Ball(
       position: Vector2(size.x / 2, size.y - 100),
-      speed: ballSpeed,
+      speed: currentBallSpeed,
       themeColors: currentThemeColors,
+      aimDirection: aimDirection,
     );
     balls.add(ball!);
     add(ball!);
@@ -105,49 +121,134 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   }
   
   void _addWalls() {
-    // Left wall
+    // Left wall with visible border
     final leftWall = RectangleComponent(
-      position: Vector2(-10, 0),
-      size: Vector2(10, size.y),
+      position: Vector2(-10, 100),
+      size: Vector2(10, size.y - 100),
+      paint: Paint()..color = Colors.transparent,
     );
     leftWall.add(RectangleHitbox());
     add(leftWall);
     
-    // Right wall
+    // Right wall with visible border
     final rightWall = RectangleComponent(
-      position: Vector2(size.x, 0),
-      size: Vector2(10, size.y),
+      position: Vector2(size.x, 100),
+      size: Vector2(10, size.y - 100),
+      paint: Paint()..color = Colors.transparent,
     );
     rightWall.add(RectangleHitbox());
     add(rightWall);
     
-    // Top wall
+    // Top wall with visible border - positioned at the same level as bricks start
     final topWall = RectangleComponent(
-      position: Vector2(0, -10),
+      position: Vector2(0, 100),
       size: Vector2(size.x, 10),
+      paint: Paint()..color = Colors.transparent,
     );
     topWall.add(RectangleHitbox());
     add(topWall);
+    
+    // No bottom wall - BBTan style (balls fall off screen)
   }
   
   void _generateBricks() {
     final random = Random();
+    final currentLevel = levelManager.getLevel(level);
     
-    // Generate new row of bricks at the top (BBTan style - don't clear existing)
-    for (int i = 0; i < bricksPerRow; i++) {
-      if (random.nextDouble() < 0.7) { // 70% chance to place a brick
-        final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
-        final brick = Brick(
-          position: Vector2(
-            (i * (size.x / bricksPerRow)) + (size.x / bricksPerRow / 2),
-            50, // Start at top
-          ),
-          hitPoints: random.nextInt(level * 2) + 1,
-          brickType: _getRandomBrickType(),
-          themeColors: currentThemeColors,
-        );
-        bricks.add(brick);
-        add(brick);
+    // Calculate safe boundaries for bricks with tighter spacing
+    final brickMargin = 10.0; // Reduced margin from screen edges
+    final availableWidth = size.x - (2 * brickMargin);
+    final brickSpacing = availableWidth / bricksPerRow;
+    final minBrickSpacing = brickWidth + 2.0; // Minimum 2px gap between bricks
+    final actualBrickSpacing = math.max(brickSpacing, minBrickSpacing);
+    
+    // Use level manager's difficulty settings
+    final baseHitPoints = currentLevel?.baseHitPoints ?? 1;
+    final brickChance = _getBrickGenerationChance();
+    
+    // Find the lowest available row to place new bricks
+    double newBrickY = _findLowestAvailableRow();
+    
+    // Generate 1 row of bricks at a time
+    for (int row = 0; row < 1; row++) {
+      final currentRowY = newBrickY - (row * brickRowHeight);
+      
+      for (int i = 0; i < bricksPerRow; i++) {
+        if (random.nextDouble() < brickChance) {
+          final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+          
+          // Calculate brick position with proper boundaries and spacing
+          final brickX = brickMargin + (i * actualBrickSpacing) + (actualBrickSpacing / 2);
+          
+          // Ensure brick stays within screen bounds
+          final clampedX = brickX.clamp(brickMargin + (brickWidth / 2), 
+                                       size.x - brickMargin - (brickWidth / 2));
+          
+          final proposedPosition = Vector2(clampedX, currentRowY);
+          
+          // Check if this position overlaps with existing bricks
+          if (!_isPositionOccupied(proposedPosition)) {
+            final brick = Brick(
+              position: proposedPosition,
+              hitPoints: _calculateBrickHitPoints(baseHitPoints, random),
+              brickType: _getRandomBrickType(),
+              themeColors: currentThemeColors,
+            );
+            bricks.add(brick);
+            add(brick);
+          }
+        }
+      }
+    }
+  }
+  
+  double _findLowestAvailableRow() {
+    // Start from the top and find the first available row
+    double startY = 100; // Below top wall
+    
+    // If no bricks exist, start at the top
+    if (bricks.isEmpty) {
+      return startY;
+    }
+    
+    // Find the topmost brick position
+    double topmostY = bricks.map((brick) => brick.position.y).reduce((a, b) => a < b ? a : b);
+    
+    // Calculate new position above the topmost existing brick
+    double newY = topmostY - brickRowHeight;
+    
+    // Ensure bricks don't go above the top boundary (100px from top)
+    if (newY < startY) {
+      // If bricks would go above boundary, shift all existing bricks down
+      _shiftBricksDown(startY - newY);
+      return startY;
+    }
+    
+    return newY;
+  }
+  
+  bool _isPositionOccupied(Vector2 position) {
+    const double tolerance = 5.0; // Small tolerance for position checking
+    
+    for (final existingBrick in bricks) {
+      final distance = (existingBrick.position - position).length;
+      if (distance < (brickWidth / 2 + tolerance)) {
+        return true; // Position is too close to existing brick
+      }
+    }
+    return false;
+  }
+  
+  void _shiftBricksDown(double shiftAmount) {
+    // Shift all existing bricks down by the specified amount
+    for (final brick in bricks) {
+      brick.position.y += shiftAmount;
+      
+      // If any brick goes below the danger zone, trigger game over
+      if (brick.position.y > size.y - 200) {
+        if (!isBurning) {
+          startBurning(5.0);
+        }
       }
     }
   }
@@ -164,14 +265,45 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     final random = Random();
     final chance = random.nextDouble();
     
-    if (chance < 0.1) {
+    // Increase special brick chances with level progression
+    final explosiveChance = 0.05 + (level * 0.01); // Start at 5%, increase 1% per level
+    final timeChance = explosiveChance + 0.03 + (level * 0.005); // Start at 8%, increase 0.5% per level
+    final teleportChance = timeChance + 0.03 + (level * 0.005); // Start at 11%, increase 0.5% per level
+    
+    if (chance < explosiveChance) {
       return BrickType.explosive;
-    } else if (chance < 0.15) {
+    } else if (chance < timeChance) {
       return BrickType.time;
-    } else if (chance < 0.2) {
+    } else if (chance < teleportChance) {
       return BrickType.teleport;
     } else {
       return BrickType.normal;
+    }
+  }
+  
+  double _getBrickGenerationChance() {
+    // Start with 80% chance, increase more aggressively with level
+    return (0.8 + (level * 0.02)).clamp(0.8, 0.95);
+  }
+  
+  int _calculateBrickHitPoints(int baseHitPoints, Random random) {
+    // Calculate hit points based on current ball count (level)
+    // Brick values should match the number of balls player has
+    final targetHitPoints = ballsRemaining;
+    
+    // Add some variation (±1) but keep it close to ball count
+    final minHitPoints = (targetHitPoints - 1).clamp(1, targetHitPoints);
+    final maxHitPoints = targetHitPoints + 1;
+    
+    return random.nextInt(maxHitPoints - minHitPoints + 1) + minHitPoints;
+  }
+  
+  void _applyLevelDifficulty() {
+    final currentLevel = levelManager.getLevel(level);
+    if (currentLevel != null) {
+      // Apply level-specific difficulty settings
+      // This could include adjusting ball speed, power-up chances, etc.
+      // For now, the difficulty is mainly handled through brick generation
     }
   }
   
@@ -218,6 +350,11 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     }
     
     aimDirection = direction;
+    
+    // Update ball's aim direction for barrel rotation
+    if (ball != null) {
+      ball!.updateAimDirection(aimDirection);
+    }
   }
   
   void launchBall() {
@@ -241,8 +378,9 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
         final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
         final newBall = Ball(
           position: Vector2(size.x / 2, size.y - 100),
-          speed: ballSpeed,
+          speed: currentBallSpeed,
           themeColors: currentThemeColors,
+          aimDirection: aimDirection,
         );
         balls.add(newBall);
         add(newBall);
@@ -267,14 +405,19 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     // Update game state (time effects)
     gameState.update(dt);
     
+    // Update burning effect
+    _updateBurningEffect(dt);
+    
+    // Update dragon movements only (fire attacks removed)
+    _updateDragons(dt);
+    
     // Check if all balls have returned to bottom
     _checkBallsReturned();
     
     // Check for game over conditions
     _checkGameOver();
     
-    // Update power-ups
-    _updatePowerUps(dt);
+
   }
   
   void _checkBallsReturned() {
@@ -336,27 +479,98 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     // Move bricks down
     _moveBricksDown();
     
-    // Generate new row if needed
-    if (Random().nextDouble() < 0.8) {
-      _generateBricks();
-    }
+    // Always generate new row of bricks (BBTan style)
+    _generateBricks();
     
-    // Increase ball count for next round (BBTan style)
-    ballsRemaining++;
+    // Increase ball count for next round (BBTan style) - faster growth
+    if (ballsRemaining < maxBallsPerLevel) {
+      ballsRemaining += 2; // Increase by 2 balls each round instead of 1
+      if (ballsRemaining > maxBallsPerLevel) {
+        ballsRemaining = maxBallsPerLevel;
+      }
+    }
     level++;
+    
+    // Update level manager and apply difficulty progression
+    levelManager.selectLevel(level - 1); // level-1 because level is 1-indexed
+    _applyLevelDifficulty();
   }
   
   void _moveBricksDown() {
+    // Calculate how many rows to move down based on level
+    double moveDistance = brickRowHeight;
+    
+    // At higher levels, bricks move down faster (2 rows at once)
+    if (level >= 10) {
+      moveDistance = brickRowHeight * 2; // Move 2 rows at once
+    } else if (level >= 5) {
+      // 50% chance to move 2 rows at levels 5-9
+      if (Random().nextDouble() < 0.5) {
+        moveDistance = brickRowHeight * 2;
+      }
+    }
+    
     for (final brick in bricks) {
-      brick.position.y += brickRowHeight;
+      brick.position.y += moveDistance;
     }
   }
   
-  void _checkGameOver() {
-    // Check if any brick has reached the bottom
+  void _updateBurningEffect(double dt) {
+    if (isBurning) {
+      burnDuration -= dt;
+      burnDamageTimer += dt;
+      
+      // Deal damage every second while burning
+      if (burnDamageTimer >= burnDamageInterval) {
+        _takeDamage();
+        burnDamageTimer = 0.0;
+      }
+      
+      // Stop burning after duration expires
+      if (burnDuration <= 0) {
+        isBurning = false;
+        burnDuration = 0.0;
+        burnDamageTimer = 0.0;
+      }
+    }
+  }
+  
+  void _takeDamage() {
+    playerLives--;
+    
+    // Play damage sound
+    audioManager.playSound('player_damage');
+    
+    // Check if player is dead
+    if (playerLives <= 0) {
+      _gameOver();
+    }
+  }
+  
+  void startBurning(double duration) {
+    isBurning = true;
+    burnDuration = duration;
+    burnDamageTimer = 0.0;
+  }
+  
+  void _updateDragons(double dt) {
     for (final brick in bricks) {
-      if (brick.position.y > size.y - 200) {
-        _gameOver();
+      if (brick.isDragon) {
+        brick.update(dt);
+      }
+    }
+  }
+  
+  // Dragon fire attack methods removed
+  
+  void _checkGameOver() {
+    // Check if any brick has reached the tank level
+    for (final brick in bricks) {
+      if (brick.position.y > size.y - 150) {
+        // Start burning effect when bricks reach player
+        if (!isBurning) {
+          startBurning(5.0); // Burn for 5 seconds
+        }
         return;
       }
     }
@@ -401,11 +615,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
       brick.updateAppearance();
     }
     
-    // Update power-up colors
-    for (final powerUp in powerUps) {
-      powerUp.themeColors = currentThemeColors;
-      powerUp.updateAppearance();
-    }
+
   }
   
   void onBrickDestroyed(Brick brick) {
@@ -437,10 +647,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
         break;
     }
     
-    // Chance to spawn power-up
-    if (Random().nextDouble() < 0.15) {
-      _spawnPowerUp(brick.position);
-    }
+
   }
   
   void _explodeBrick(Brick brick) {
@@ -472,115 +679,115 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   
   void _teleportBrick(Brick brick) {
     final random = Random();
-    brick.position = Vector2(
-      random.nextDouble() * (size.x - brickWidth),
-      random.nextDouble() * (size.y / 2),
-    );
+    final brickMargin = 10.0;
+    
+    // Ensure teleported brick stays within screen bounds
+    final safeX = brickMargin + random.nextDouble() * (size.x - 2 * brickMargin - brickWidth);
+    final safeY = 120 + random.nextDouble() * (size.y / 2 - 120); // Stay below UI and above bottom half
+    
+    brick.position = Vector2(safeX, safeY);
   }
   
-  void _spawnPowerUp(Vector2 position) {
-    final powerUpType = _getRandomPowerUpType();
-    final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
-    final powerUp = PowerUp(
-      position: position,
-      powerUpType: powerUpType,
-      themeColors: currentThemeColors,
-    );
-    powerUps.add(powerUp);
-    add(powerUp);
-  }
-  
-  PowerUpType _getRandomPowerUpType() {
-    final random = Random();
-    final types = PowerUpType.values;
-    return types[random.nextInt(types.length)];
-  }
-  
-  void _updatePowerUps(double dt) {
-    powerUps.removeWhere((powerUp) {
-      if (powerUp.position.y > size.y) {
-        powerUp.removeFromParent();
-        return true;
-      }
-      return false;
-    });
-  }
-  
-  void onPowerUpCollected(PowerUp powerUp) {
-    powerUps.remove(powerUp);
-    
-    // Notify mission manager
-    missionManager.onPowerUpCollected(powerUp.powerUpType);
-    
-    // Play power-up collection sound
-    audioManager.playSound('power_up');
-    
-    // Add power-up collection effect
-    final powerUpEffect = ParticleEffects.createPowerUpEffect(
-      powerUp.position, 
-      _getPowerUpColor(powerUp.powerUpType)
-    );
-    add(powerUpEffect);
-    
-    switch (powerUp.powerUpType) {
-      case PowerUpType.timeFreeze:
-        _activateTimeFreeze();
-        break;
-      case PowerUpType.cloneBall:
-        _activateCloneBall();
-        break;
-      case PowerUpType.laserBall:
-        _activateLaserBall();
-        break;
-    }
-  }
-  
-  void _activateTimeFreeze() {
-    gameState.activateTimeFreeze(1.0); // Reduced from 3 seconds to 1 second
-  }
-  
-  void _activateCloneBall() {
-    if (ball == null) return;
-    
-    // Create a clone of the current ball
-    final cloneBall = Ball(
-      position: ball!.position.clone(),
-      speed: ballSpeed,
-    );
-    
-    // Launch clone in a slightly different direction
-    final cloneDirection = ball!.velocity.normalized();
-    cloneDirection.rotate(0.3); // 0.3 radians difference
-    cloneBall.launch(cloneDirection);
-    
-    balls.add(cloneBall);
-    add(cloneBall);
-  }
-  
-  void _activateLaserBall() {
-    if (ball == null) return;
-    ball!.activateLaser(5.0); // 5 seconds of laser mode
-  }
 
-  Color _getPowerUpColor(PowerUpType powerUpType) {
-    switch (powerUpType) {
-      case PowerUpType.timeFreeze:
-        return Colors.blue;
-      case PowerUpType.cloneBall:
-        return Colors.green;
-      case PowerUpType.laserBall:
-        return Colors.red;
-    }
-  }
+  
+
   
   @override
   void render(Canvas canvas) {
     super.render(canvas);
     
+    // Draw game borders (BBTan style)
+    _drawGameBorders(canvas);
+    
     // Draw aim line when aiming
     if (isAiming && aimDirection != null) {
       _drawAimLine(canvas);
     }
+  }
+  
+  void _drawGameBorders(Canvas canvas) {
+    final borderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.8)
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke;
+    
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.3)
+      ..strokeWidth = 5.0
+      ..style = PaintingStyle.stroke;
+    
+    // Draw shadow first (behind the main border)
+    canvas.drawLine(
+      const Offset(1, 100),
+      Offset(1, size.y),
+      shadowPaint,
+    );
+    
+    canvas.drawLine(
+      Offset(size.x - 1, 100),
+      Offset(size.x - 1, size.y),
+      shadowPaint,
+    );
+    
+    canvas.drawLine(
+      const Offset(0, 101),
+      Offset(size.x, 101),
+      shadowPaint,
+    );
+    
+    // Draw main borders
+    // Left border
+    canvas.drawLine(
+      const Offset(0, 100),
+      Offset(0, size.y),
+      borderPaint,
+    );
+    
+    // Right border
+    canvas.drawLine(
+      Offset(size.x, 100),
+      Offset(size.x, size.y),
+      borderPaint,
+    );
+    
+    // Top border
+    canvas.drawLine(
+      const Offset(0, 100),
+      Offset(size.x, 100),
+      borderPaint,
+    );
+    
+    // Add corner highlights for better visibility
+    final cornerPaint = Paint()
+      ..color = Colors.cyan.withValues(alpha: 0.6)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+    
+    // Top-left corner
+    canvas.drawLine(
+      const Offset(0, 100),
+      const Offset(20, 100),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      const Offset(0, 100),
+      const Offset(0, 120),
+      cornerPaint,
+    );
+    
+    // Top-right corner
+    canvas.drawLine(
+      Offset(size.x - 20, 100),
+      Offset(size.x, 100),
+      cornerPaint,
+    );
+    canvas.drawLine(
+      Offset(size.x, 100),
+      Offset(size.x, 120),
+      cornerPaint,
+    );
+    
+    // No bottom corners - BBTan style (open bottom)
   }
   
   void _drawAimLine(Canvas canvas) {
@@ -599,7 +806,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     const int maxDots = 30;
     
     Vector2 currentPos = start.clone();
-    Vector2 velocity = direction * ballSpeed;
+    Vector2 velocity = direction * currentBallSpeed;
     
     for (int i = 0; i < maxDots; i++) {
       // Draw dot
@@ -610,7 +817,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
       );
       
       // Simulate ball physics for next dot position
-      currentPos += velocity * (dotSpacing / ballSpeed);
+      currentPos += velocity * (dotSpacing / currentBallSpeed);
       
       // Check wall bounces
       if (currentPos.x <= 12 || currentPos.x >= size.x - 12) {
@@ -618,9 +825,9 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
         currentPos.x = currentPos.x <= 12 ? 12 : size.x - 12;
       }
       
-      if (currentPos.y <= 12) {
+      if (currentPos.y <= 112) {
         velocity.y = -velocity.y;
-        currentPos.y = 12;
+        currentPos.y = 112;
       }
       
       // Stop if ball goes too far down or hits a brick

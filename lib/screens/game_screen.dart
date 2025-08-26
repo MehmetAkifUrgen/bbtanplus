@@ -1,26 +1,65 @@
 import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
+import 'dart:math';
 import '../game/crystal_breaker_game.dart';
 import '../models/level.dart';
+import '../models/game_state.dart';
 
 class GameScreen extends StatefulWidget {
   final Level? selectedLevel;
+  final bool resumeGame;
+  final GameState? gameState;
   
-  const GameScreen({super.key, this.selectedLevel});
+  const GameScreen({
+    super.key, 
+    this.selectedLevel,
+    this.resumeGame = false,
+    this.gameState,
+  });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late CrystalBreakerGame game;
-  bool isPaused = false;
   bool isGameLoaded = false;
+  bool isPaused = false;
+  late AnimationController _staffAnimationController;
+  late Animation<double> _staffSwingAnimation;
+  bool _isStaffSwinging = false;
 
   @override
   void initState() {
     super.initState();
     _initializeGame();
+    
+    // Initialize staff swing animation
+    _staffAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _staffSwingAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.3, // 0.3 radians swing
+    ).animate(CurvedAnimation(
+      parent: _staffAnimationController,
+      curve: Curves.easeInOut,
+    ));
+  }
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check if we're resuming a game from route arguments
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (args != null && args['resumeGame'] == true) {
+      final gameState = args['gameState'] as GameState?;
+      if (gameState != null) {
+        _resumeGame(gameState);
+      }
+    }
   }
   
   Future<void> _initializeGame() async {
@@ -33,6 +72,23 @@ class _GameScreenState extends State<GameScreen> {
       setState(() {
         isGameLoaded = true;
       });
+    }
+  }
+  
+  Future<void> _resumeGame(GameState gameState) async {
+    // Resume game with saved state
+    if (isGameLoaded) {
+      game.gameState = gameState;
+      // Additional resume logic can be added here
+    }
+  }
+  
+  Future<void> _saveAndQuit() async {
+    if (isGameLoaded) {
+      await game.gameState.saveGameState();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -50,6 +106,7 @@ class _GameScreenState extends State<GameScreen> {
             },
             onTapUp: (details) {
               if (isGameLoaded && game.isAiming) {
+                _triggerStaffSwing();
                 game.launchBall();
               }
             },
@@ -65,6 +122,7 @@ class _GameScreenState extends State<GameScreen> {
             },
             onPanEnd: (details) {
               if (isGameLoaded && game.isAiming) {
+                _triggerStaffSwing();
                 game.launchBall();
               }
             },
@@ -128,7 +186,7 @@ class _GameScreenState extends State<GameScreen> {
           // UI Overlay
           if (isGameLoaded)
             Positioned(
-              top: 50,
+              top: 30,
               left: 20,
               right: 20,
               child: Row(
@@ -174,44 +232,179 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                   ),
                   
-                  // Pause Button
+                  // Level Display
                   Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                        colors: [Color(0xFFf093fb), Color(0xFFf5576c)],
                       ),
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.purple.withValues(alpha: 0.3),
+                          color: Colors.pink.withValues(alpha: 0.3),
                           blurRadius: 10,
                           offset: const Offset(0, 5),
                         ),
                       ],
                     ),
-                    child: IconButton(
-                      onPressed: _togglePause,
-                      icon: Icon(
-                        isPaused ? Icons.play_arrow : Icons.pause,
-                        color: Colors.white,
-                        size: 28,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.layers,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Level ${game.currentLevel?.levelNumber ?? 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  
+                  // Lives and Status Display
+                  Row(
+                    children: [
+                      // Lives Display
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: game.isBurning 
+                                ? [Colors.red.shade600, Colors.orange.shade600]
+                                : [Color(0xFF43e97b), Color(0xFF38f9d7)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (game.isBurning ? Colors.red : Colors.green).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              game.isBurning ? Icons.local_fire_department : Icons.favorite,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${game.playerLives}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      
+                      // Ball Count Display
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 15,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.sports_baseball,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${game.ballsRemaining}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      
+                      // Pause Button
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                          ),
+                          borderRadius: BorderRadius.circular(25),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.purple.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: _togglePause,
+                          icon: Icon(
+                            isPaused ? Icons.play_arrow : Icons.pause,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           
-          // Football Player Character
+          // Gandalf Character (Ana Karakter)
           if (isGameLoaded)
             Positioned(
-              bottom: 20,
-              left: MediaQuery.of(context).size.width / 2 - 30,
+              bottom: 15,
+              left: MediaQuery.of(context).size.width / 2 - 50,
               child: Container(
-                width: 60,
+                width: 100,
                 height: 80,
-                child: CustomPaint(
-                  painter: FootballPlayerPainter(),
+                child: Transform.rotate(
+                  angle: _staffSwingAnimation.value * 0.1, // Hafif sallanma efekti
+                  child: Image.asset(
+                    'assets/images/gandalf-removebg-preview.png',
+                    width: 100,
+                    height: 80,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
             ),
@@ -273,6 +466,16 @@ class _GameScreenState extends State<GameScreen> {
                       const SizedBox(height: 20),
                       
                       _buildPauseButton(
+                        'KAYDET VE ÇIK',
+                        Icons.save,
+                        const LinearGradient(
+                          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                        ),
+                        _saveAndQuit,
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      _buildPauseButton(
                         'QUIT GAME',
                         Icons.exit_to_app,
                         const LinearGradient(
@@ -299,6 +502,21 @@ class _GameScreenState extends State<GameScreen> {
         game.resumeEngine();
       }
     });
+  }
+
+  void _triggerStaffSwing() {
+    if (!_isStaffSwinging) {
+      setState(() {
+        _isStaffSwinging = true;
+      });
+      _staffAnimationController.forward().then((_) {
+        _staffAnimationController.reverse().then((_) {
+          setState(() {
+            _isStaffSwinging = false;
+          });
+        });
+      });
+    }
   }
 
   Widget _buildPauseButton(
@@ -351,140 +569,8 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    _staffAnimationController.dispose();
     game.detach();
     super.dispose();
   }
-}
-
-class FootballPlayerPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    
-    // Draw head (circle)
-    paint.color = const Color(0xFFFFDBB5); // Skin color
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height * 0.2),
-      size.width * 0.15,
-      paint,
-    );
-    
-    // Draw body (rectangle)
-    paint.color = Colors.blue; // Jersey color
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(
-          size.width * 0.3,
-          size.height * 0.3,
-          size.width * 0.4,
-          size.height * 0.4,
-        ),
-        const Radius.circular(5),
-      ),
-      paint,
-    );
-    
-    // Draw arms
-    paint.color = const Color(0xFFFFDBB5);
-    paint.strokeWidth = size.width * 0.08;
-    paint.strokeCap = StrokeCap.round;
-    
-    // Left arm
-    canvas.drawLine(
-      Offset(size.width * 0.25, size.height * 0.4),
-      Offset(size.width * 0.1, size.height * 0.55),
-      paint,
-    );
-    
-    // Right arm
-    canvas.drawLine(
-      Offset(size.width * 0.75, size.height * 0.4),
-      Offset(size.width * 0.9, size.height * 0.55),
-      paint,
-    );
-    
-    // Draw legs
-    paint.color = Colors.white; // Shorts color
-    paint.strokeWidth = size.width * 0.12;
-    
-    // Left leg
-    canvas.drawLine(
-      Offset(size.width * 0.4, size.height * 0.7),
-      Offset(size.width * 0.35, size.height * 0.9),
-      paint,
-    );
-    
-    // Right leg
-    canvas.drawLine(
-      Offset(size.width * 0.6, size.height * 0.7),
-      Offset(size.width * 0.65, size.height * 0.9),
-      paint,
-    );
-    
-    // Draw football boots
-    paint.color = Colors.black;
-    paint.style = PaintingStyle.fill;
-    
-    // Left boot
-    canvas.drawOval(
-      Rect.fromLTWH(
-        size.width * 0.25,
-        size.height * 0.85,
-        size.width * 0.2,
-        size.height * 0.1,
-      ),
-      paint,
-    );
-    
-    // Right boot
-    canvas.drawOval(
-      Rect.fromLTWH(
-        size.width * 0.55,
-        size.height * 0.85,
-        size.width * 0.2,
-        size.height * 0.1,
-      ),
-      paint,
-    );
-    
-    // Draw hair
-    paint.color = Colors.brown;
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height * 0.15),
-      size.width * 0.12,
-      paint,
-    );
-    
-    // Draw eyes
-    paint.color = Colors.black;
-    canvas.drawCircle(
-      Offset(size.width * 0.45, size.height * 0.18),
-      size.width * 0.02,
-      paint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.55, size.height * 0.18),
-      size.width * 0.02,
-      paint,
-    );
-    
-    // Draw smile
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 2;
-    final smilePath = Path();
-    smilePath.addArc(
-      Rect.fromLTWH(
-        size.width * 0.45,
-        size.height * 0.2,
-        size.width * 0.1,
-        size.height * 0.05,
-      ),
-      0,
-      3.14159,
-    );
-    canvas.drawPath(smilePath, paint);
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
