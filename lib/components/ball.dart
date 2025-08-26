@@ -149,6 +149,11 @@ class Ball extends CircleComponent with CollisionCallbacks, HasGameReference<Cry
   
   @override
   void render(Canvas canvas) {
+    // Draw character foot when ball is stationary
+    if (velocity.length < 10) {
+      _drawCharacterFoot(canvas);
+    }
+    
     // Draw football base (white)
     final footballPaint = Paint()..color = Colors.white;
     canvas.drawCircle(Offset.zero, radius, footballPaint);
@@ -209,5 +214,69 @@ class Ball extends CircleComponent with CollisionCallbacks, HasGameReference<Cry
         glowPaint,
       );
     }
+  }
+  
+  void _drawCharacterFoot(Canvas canvas) {
+    // Draw character leg
+    final legPaint = Paint()
+      ..color = const Color(0xFFFFDBB5) // Skin color
+      ..style = PaintingStyle.fill;
+    
+    // Draw leg (cylinder shape)
+    final legRect = Rect.fromLTWH(-3, radius + 5, 6, 25);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(legRect, const Radius.circular(3)),
+      legPaint,
+    );
+    
+    // Draw shoe
+    final shoePaint = Paint()
+      ..color = const Color(0xFF2C3E50) // Dark blue shoe
+      ..style = PaintingStyle.fill;
+    
+    // Main shoe body
+    final shoeRect = Rect.fromLTWH(-8, radius + 25, 16, 8);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(shoeRect, const Radius.circular(4)),
+      shoePaint,
+    );
+    
+    // Shoe sole
+    final solePaint = Paint()
+      ..color = const Color(0xFF34495E) // Darker sole
+      ..style = PaintingStyle.fill;
+    
+    final soleRect = Rect.fromLTWH(-9, radius + 31, 18, 3);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(soleRect, const Radius.circular(2)),
+      solePaint,
+    );
+    
+    // Shoe laces
+    final lacePaint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    
+    // Draw lace pattern
+    for (int i = 0; i < 3; i++) {
+      final y = radius + 27 + (i * 2);
+      canvas.drawLine(
+        Offset(-4, y),
+        Offset(4, y),
+        lacePaint,
+      );
+    }
+    
+    // Add small highlight on shoe
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.3)
+      ..style = PaintingStyle.fill;
+    
+    final highlightRect = Rect.fromLTWH(-6, radius + 26, 4, 2);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(highlightRect, const Radius.circular(1)),
+      highlightPaint,
+    );
   }
 }

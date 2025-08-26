@@ -127,18 +127,97 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
   
   @override
   void render(Canvas canvas) {
-    super.render(canvas);
+    // Draw modern brick with gradient and rounded corners
+    _drawModernBrick(canvas);
     
     // Add special visual effects for each brick type
     _renderSpecialEffects(canvas);
     
-    // Draw hit points text
+    // Draw hit points text with shadow
+    _drawHitPointsText(canvas);
+    
+    // Draw special effect indicators
+    if (brickType != BrickType.normal) {
+      _drawSpecialIndicator(canvas);
+    }
+  }
+  
+  void _drawModernBrick(Canvas canvas) {
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+    final roundedRect = RRect.fromRectAndRadius(rect, const Radius.circular(8));
+    
+    // Create gradient based on brick type and hit points
+    final baseColor = _getBrickTypeColor();
+    final intensity = hitPoints / maxHitPoints;
+    
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        baseColor.withValues(alpha: 0.9 * intensity),
+        baseColor.withValues(alpha: 0.6 * intensity),
+        baseColor.withValues(alpha: 0.8 * intensity),
+      ],
+      stops: const [0.0, 0.5, 1.0],
+    );
+    
+    final gradientPaint = Paint()
+      ..shader = gradient.createShader(rect);
+    
+    // Draw main brick with gradient
+    canvas.drawRRect(roundedRect, gradientPaint);
+    
+    // Add subtle border for depth
+    final borderPaint = Paint()
+      ..color = baseColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    
+    canvas.drawRRect(roundedRect, borderPaint);
+    
+    // Add highlight for 3D effect
+    final highlightRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(2, 2, size.x - 4, size.y / 3),
+      const Radius.circular(6),
+    );
+    
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.3 * intensity)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+    
+    canvas.drawRRect(highlightRect, highlightPaint);
+  }
+  
+  void _drawHitPointsText(Canvas canvas) {
+    // Draw text shadow first
+    final shadowPainter = TextPainter(
+      text: TextSpan(
+        text: hitPoints.toString(),
+        style: TextStyle(
+          color: Colors.black.withValues(alpha: 0.5),
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    
+    shadowPainter.layout();
+    
+    final shadowOffset = Offset(
+      (size.x - shadowPainter.width) / 2 + 1,
+      (size.y - shadowPainter.height) / 2 + 1,
+    );
+    
+    shadowPainter.paint(canvas, shadowOffset);
+    
+    // Draw main text
     final textPainter = TextPainter(
       text: TextSpan(
         text: hitPoints.toString(),
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 16,
+          fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -153,11 +232,6 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
     );
     
     textPainter.paint(canvas, textOffset);
-    
-    // Draw special effect indicators
-    if (brickType != BrickType.normal) {
-      _drawSpecialIndicator(canvas);
-    }
   }
   
   void _renderSpecialEffects(Canvas canvas) {

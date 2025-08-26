@@ -264,6 +264,9 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   void update(double dt) {
     super.update(dt);
     
+    // Update game state (time effects)
+    gameState.update(dt);
+    
     // Check if all balls have returned to bottom
     _checkBallsReturned();
     
@@ -533,7 +536,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   }
   
   void _activateTimeFreeze() {
-    gameState.activateTimeFreeze(3.0);
+    gameState.activateTimeFreeze(1.0); // Reduced from 3 seconds to 1 second
   }
   
   void _activateCloneBall() {
