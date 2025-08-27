@@ -22,7 +22,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   late GameState gameState;
   Ball? ball;
   List<Ball> balls = []; // Track multiple balls
-  late List<Brick> bricks;
+  List<Brick> bricks = [];
   late AudioManager audioManager;
   late MissionManager missionManager;
   late LevelManager levelManager;
@@ -64,7 +64,6 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     
     // Initialize core components first
     gameState = GameState();
-    bricks = [];
     
     // Set current level
     currentLevel = selectedLevel;
@@ -78,8 +77,26 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
       _initializeManagers(),
     ]);
     
-    // Initialize ball with theme colors
-    final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+    // Initialize ball with safe theme colors
+    ThemeColors currentThemeColors;
+    try {
+      currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+    } catch (e) {
+      // Fallback to default colors if themeManager not ready
+      currentThemeColors = const ThemeColors(
+        primary: Color(0xFF4facfe),
+        secondary: Color(0xFF00f2fe),
+        background: Color(0xFF1a1a2e),
+        surface: Color(0xFF16213e),
+        accent: Color(0xFF0f3460),
+        ballColor: Colors.white,
+        normalBrick: Colors.blue,
+        explosiveBrick: Colors.red,
+        timeBrick: Colors.purple,
+        teleportBrick: Colors.green,
+        powerUpColor: Colors.amber,
+      );
+    }
     ball = Ball(
       position: Vector2(size.x / 2, size.y - 100),
       speed: currentBallSpeed,
@@ -173,7 +190,26 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
       
       for (int i = 0; i < bricksPerRow; i++) {
         if (random.nextDouble() < brickChance) {
-          final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+          // Get theme colors safely
+          ThemeColors currentThemeColors;
+          try {
+            currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+          } catch (e) {
+            // Fallback to default colors if themeManager not ready
+            currentThemeColors = const ThemeColors(
+              primary: Color(0xFF4facfe),
+              secondary: Color(0xFF00f2fe),
+              background: Color(0xFF1a1a2e),
+              surface: Color(0xFF16213e),
+              accent: Color(0xFF0f3460),
+              ballColor: Colors.white,
+              normalBrick: Colors.blue,
+              explosiveBrick: Colors.red,
+              timeBrick: Colors.purple,
+              teleportBrick: Colors.green,
+              powerUpColor: Colors.amber,
+            );
+          }
           
           // Calculate brick position - align to left edge with no gaps
           final brickX = i * brickWidth;
@@ -265,23 +301,104 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   }
   
   int _calculateBrickHitPoints(int baseHitPoints, Random random) {
-    // Calculate hit points based on current ball count (level)
-    // Brick values should match the number of balls player has
-    final targetHitPoints = ballsRemaining;
-    
-    // Add some variation (±1) but keep it close to ball count
-    final minHitPoints = (targetHitPoints - 1).clamp(1, targetHitPoints);
-    final maxHitPoints = targetHitPoints + 1;
-    
+    // Increase difficulty: base hit points grow with both ballsRemaining and current level
+    // Add baseHitPoints from LevelManager for extra scaling
+    final int difficultyBase = ballsRemaining + (level ~/ 2) + baseHitPoints;
+
+    // Allow 20% random variation around the calculated base
+    final int variation = (difficultyBase * 0.2).round();
+    final int minHitPoints = (difficultyBase - variation).clamp(1, difficultyBase);
+    final int maxHitPoints = difficultyBase + variation;
+
     return random.nextInt(maxHitPoints - minHitPoints + 1) + minHitPoints;
   }
   
+  // -------------------
+  // Persistence Helpers
+  // -------------------
+  
+  /// Capture the current in-memory game parameters and brick layout into [gameState]
+  void captureGameState() {
+    gameState.score = score;
+    gameState.level = level;
+    gameState.ballsRemaining = ballsRemaining;
+    gameState.brickStates = bricks.map((brick) => {
+          'x': brick.position.x,
+          'y': brick.position.y,
+          'hitPoints': brick.hitPoints,
+          'maxHitPoints': brick.maxHitPoints,
+          'brickType': brick.brickType.toString().split('.').last,
+        }).toList();
+  }
+
+  /// Restore bricks and key counters from a previously saved [state].
+  void restoreFromGameState(GameState state) {
+    score = state.score;
+    level = state.level;
+    ballsRemaining = state.ballsRemaining;
+
+    // Clear any existing bricks to avoid duplicates
+    _clearAllBricks();
+
+    for (final brickJson in state.brickStates) {
+      final brickTypeStr = brickJson['brickType'] as String? ?? 'normal';
+      final brickType = _brickTypeFromString(brickTypeStr);
+      
+      // Get theme colors safely - use default if themeManager not initialized
+      ThemeColors currentThemeColors;
+      try {
+        currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+      } catch (e) {
+        // Fallback to default colors if themeManager not ready
+        currentThemeColors = const ThemeColors(
+          primary: Color(0xFF4facfe),
+          secondary: Color(0xFF00f2fe),
+          background: Color(0xFF1a1a2e),
+          surface: Color(0xFF16213e),
+          accent: Color(0xFF0f3460),
+          ballColor: Colors.white,
+          normalBrick: Colors.blue,
+          explosiveBrick: Colors.red,
+          timeBrick: Colors.purple,
+          teleportBrick: Colors.green,
+          powerUpColor: Colors.amber,
+        );
+      }
+      
+      final brick = Brick(
+        position: Vector2((brickJson['x'] as num).toDouble(), (brickJson['y'] as num).toDouble()),
+        hitPoints: brickJson['hitPoints'] ?? 1,
+        brickType: brickType,
+        themeColors: currentThemeColors,
+        customSize: Vector2(brickWidth, brickHeight),
+      );
+      brick.maxHitPoints = brickJson['maxHitPoints'] ?? brick.hitPoints;
+      bricks.add(brick);
+      add(brick);
+    }
+  }
+
+  BrickType _brickTypeFromString(String type) {
+    switch (type) {
+      case 'explosive':
+        return BrickType.explosive;
+      case 'time':
+        return BrickType.time;
+      case 'teleport':
+        return BrickType.teleport;
+      default:
+        return BrickType.normal;
+    }
+  }
+  
+  /// Apply difficulty settings for the current [level].
+  /// Currently this just acts as a hook for future balancing tweaks
+  /// such as ball speed escalation or power-up frequency.
   void _applyLevelDifficulty() {
     final currentLevel = levelManager.getLevel(level);
     if (currentLevel != null) {
-      // Apply level-specific difficulty settings
-      // This could include adjusting ball speed, power-up chances, etc.
-      // For now, the difficulty is mainly handled through brick generation
+      // Difficulty scaling is mostly achieved via brick generation for now.
+      // Add additional per-level balancing here when necessary.
     }
   }
   
@@ -352,8 +469,26 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
       
       // Launch additional balls with delay for BBTan style
       for (int i = 1; i < ballsRemaining; i++) {
-        // Create additional balls
-        final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+        // Create additional balls with safe theme colors
+        ThemeColors currentThemeColors;
+        try {
+          currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
+        } catch (e) {
+          // Fallback to default colors if themeManager not ready
+          currentThemeColors = const ThemeColors(
+            primary: Color(0xFF4facfe),
+            secondary: Color(0xFF00f2fe),
+            background: Color(0xFF1a1a2e),
+            surface: Color(0xFF16213e),
+            accent: Color(0xFF0f3460),
+            ballColor: Colors.white,
+            normalBrick: Colors.blue,
+            explosiveBrick: Colors.red,
+            timeBrick: Colors.purple,
+            teleportBrick: Colors.green,
+            powerUpColor: Colors.amber,
+          );
+        }
         final newBall = Ball(
           position: Vector2(size.x / 2, size.y - 100),
           speed: currentBallSpeed,
@@ -468,10 +603,16 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
       }
     }
     level++;
+
+    // Sync game state ball count for correct persistence
+    gameState.ballsRemaining = ballsRemaining;
     
     // Update level manager and apply difficulty progression
     levelManager.selectLevel(level - 1); // level-1 because level is 1-indexed
     _applyLevelDifficulty();
+
+    // Capture snapshot for automatic persistence after each round
+    captureGameState();
   }
   
   void _moveBricksDown() {
@@ -597,7 +738,8 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   }
   
   void onBrickDestroyed(Brick brick) {
-    score += brick.hitPoints * 10;
+    // Use original hit points to ensure proper score calculation
+    score += brick.maxHitPoints * 10;
     bricks.remove(brick);
     
     // Notify mission manager

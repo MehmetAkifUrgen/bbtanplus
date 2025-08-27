@@ -57,7 +57,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     if (args != null && args['resumeGame'] == true) {
       final gameState = args['gameState'] as GameState?;
       if (gameState != null) {
-        _resumeGame(gameState);
+        _waitForGameLoadAndResume(gameState);
       }
     }
   }
@@ -75,16 +75,37 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     }
   }
   
+  Future<void> _waitForGameLoadAndResume(GameState gameState) async {
+    // Wait for game to be fully loaded before resuming
+    while (!isGameLoaded) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    
+    // Additional wait to ensure all managers are initialized
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    // Double check that game is still loaded and mounted
+    if (isGameLoaded && mounted) {
+      _resumeGame(gameState);
+    }
+  }
+  
   Future<void> _resumeGame(GameState gameState) async {
     // Resume game with saved state
     if (isGameLoaded) {
+      // Core state sync
+      // Attach state then delegate restoration for consistency
       game.gameState = gameState;
-      // Additional resume logic can be added here
+      game.restoreFromGameState(gameState);
+      // Trigger UI rebuild for updated values
+      setState(() {});
     }
   }
   
   Future<void> _saveAndQuit() async {
     if (isGameLoaded) {
+      // Ensure latest state captured
+      game.captureGameState();
       await game.gameState.saveGameState();
       if (mounted) {
         Navigator.of(context).pop();
@@ -189,25 +210,28 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               top: 30,
               left: 20,
               right: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   // Score Display
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
                       ),
-                      borderRadius: BorderRadius.circular(25),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.blue.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -217,14 +241,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                         const Icon(
                           Icons.star,
                           color: Colors.white,
-                          size: 20,
+                          size: 16,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
                           '${game.score}',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -235,19 +259,19 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                   // Level Display
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFf093fb), Color(0xFFf5576c)],
                       ),
-                      borderRadius: BorderRadius.circular(25),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.pink.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -257,14 +281,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                         const Icon(
                           Icons.layers,
                           color: Colors.white,
-                          size: 20,
+                          size: 16,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Text(
-                          'Level ${game.currentLevel?.levelNumber ?? 1}',
+                          'Lv ${game.currentLevel?.levelNumber ?? 1}',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -272,118 +296,119 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   
-                  // Lives and Status Display
-                  Row(
-                    children: [
-                      // Lives Display
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 10,
+                  // Lives Display
+                   Container(
+                     padding: const EdgeInsets.symmetric(
+                       horizontal: 10,
+                       vertical: 6,
+                     ),
+                     decoration: BoxDecoration(
+                       gradient: LinearGradient(
+                         colors: game.isBurning 
+                             ? [Colors.red.shade600, Colors.orange.shade600]
+                             : [Color(0xFF43e97b), Color(0xFF38f9d7)],
+                       ),
+                       borderRadius: BorderRadius.circular(15),
+                       boxShadow: [
+                         BoxShadow(
+                           color: (game.isBurning ? Colors.red : Colors.green).withValues(alpha: 0.3),
+                           blurRadius: 6,
+                           offset: const Offset(0, 2),
+                         ),
+                       ],
+                     ),
+                     child: Row(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         Icon(
+                           game.isBurning ? Icons.local_fire_department : Icons.favorite,
+                           color: Colors.white,
+                           size: 14,
+                         ),
+                         const SizedBox(width: 4),
+                         Text(
+                           '${game.playerLives}',
+                           style: const TextStyle(
+                             color: Colors.white,
+                             fontSize: 14,
+                             fontWeight: FontWeight.bold,
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+                  
+                  // Ball Count Display
+                   Container(
+                     padding: const EdgeInsets.symmetric(
+                       horizontal: 10,
+                       vertical: 6,
+                     ),
+                     decoration: BoxDecoration(
+                       gradient: const LinearGradient(
+                         colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                       ),
+                       borderRadius: BorderRadius.circular(15),
+                       boxShadow: [
+                         BoxShadow(
+                           color: Colors.blue.withValues(alpha: 0.3),
+                           blurRadius: 6,
+                           offset: const Offset(0, 2),
+                         ),
+                       ],
+                     ),
+                     child: Row(
+                       mainAxisSize: MainAxisSize.min,
+                       children: [
+                         const Icon(
+                           Icons.sports_baseball,
+                           color: Colors.white,
+                           size: 14,
+                         ),
+                         const SizedBox(width: 4),
+                         Text(
+                           '${game.ballsRemaining}',
+                           style: const TextStyle(
+                             color: Colors.white,
+                             fontSize: 14,
+                             fontWeight: FontWeight.bold,
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+                  
+                  // Pause Button
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                      ),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.purple.withValues(alpha: 0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
                         ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: game.isBurning 
-                                ? [Colors.red.shade600, Colors.orange.shade600]
-                                : [Color(0xFF43e97b), Color(0xFF38f9d7)],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: (game.isBurning ? Colors.red : Colors.green).withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              game.isBurning ? Icons.local_fire_department : Icons.favorite,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${game.playerLives}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                      ],
+                    ),
+                    child: InkWell(
+                      onTap: _togglePause,
+                      borderRadius: BorderRadius.circular(15),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          isPaused ? Icons.play_arrow : Icons.pause,
+                          color: Colors.white,
+                          size: 14,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      
-                      // Ball Count Display
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 15,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.sports_baseball,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${game.ballsRemaining}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      
-                      // Pause Button
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                          ),
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.purple.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          onPressed: _togglePause,
-                          icon: Icon(
-                            isPaused ? Icons.play_arrow : Icons.pause,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),

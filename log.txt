@@ -1,22 +1,24 @@
-Restarted application in 362ms.
+Restarted application in 792ms.
+W/WindowOnBackDispatcher( 3185): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 3185): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
 
 ════════ Exception caught by rendering library ═════════════════════════════════
 The following assertion was thrown during layout:
-A RenderFlex overflowed by 6.6 pixels on the right.
+A RenderFlex overflowed by 57 pixels on the right.
 
 The relevant error-causing widget was:
     Row Row:file:///Users/a./flutterProjects/bbtanpluso3/lib/screens/game_screen.dart:192:22
 
-: To inspect this widget in Flutter DevTools, visit: http://127.0.0.1:9100/#/inspector?uri=http%3A%2F%2F127.0.0.1%3A63387%2F1eHRGLUeIts%3D%2F&inspectorRef=inspector-0
+: To inspect this widget in Flutter DevTools, visit: http://127.0.0.1:9100/#/inspector?uri=http%3A%2F%2F127.0.0.1%3A51443%2Fo5GRRTRftt0%3D%2F&inspectorRef=inspector-0
 
 The overflowing RenderFlex has an orientation of Axis.horizontal.
 The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
 Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the RenderFlex to fit within the available space instead of being sized to their natural size.
 This is considered an error condition because it indicates that there is content that cannot be seen. If the content is legitimately bigger than the available space, consider clipping it with a ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex, like a ListView.
-The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OVERFLOWING
+The specific RenderFlex in question is: RenderFlex#d84d7 relayoutBoundary=up2 OVERFLOWING
     parentData: top=30.0; right=20.0; left=20.0; offset=Offset(20.0, 30.0) (can use size)
-    constraints: BoxConstraints(w=400.0, 0.0<=h<=Infinity)
-    size: Size(400.0, 50.0)
+    constraints: BoxConstraints(w=344.0, 0.0<=h<=Infinity)
+    size: Size(344.0, 50.0)
     direction: horizontal
     mainAxisAlignment: spaceBetween
     mainAxisSize: max
@@ -24,25 +26,25 @@ The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OV
     textDirection: ltr
     verticalDirection: down
     spacing: 0.0
-    child 1: RenderDecoratedBox#ed7df relayoutBoundary=up3
+    child 1: RenderDecoratedBox#fd802 relayoutBoundary=up3
         parentData: offset=Offset(0.0, 0.0); flex=null; fit=null (can use size)
         constraints: BoxConstraints(unconstrained)
-        size: Size(80.6, 50.0)
+        size: Size(78.6, 50.0)
         decoration: BoxDecoration
             borderRadius: BorderRadius.circular(25.0)
             boxShadow: BoxShadow(Color(alpha: 0.3000, red: 0.1294, green: 0.5882, blue: 0.9529, colorSpace: ColorSpace.sRGB), Offset(0.0, 5.0), 10.0, 0.0, BlurStyle.normal)
             gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(alpha: 1.0000, red: 0.3098, green: 0.6745, blue: 0.9961, colorSpace: ColorSpace.sRGB), Color(alpha: 1.0000, red: 0.0000, green: 0.9490, blue: 0.9961, colorSpace: ColorSpace.sRGB)], tileMode: TileMode.clamp)
-        configuration: ImageConfiguration(bundle: PlatformAssetBundle#1b371(), devicePixelRatio: 3.0, locale: en_US, textDirection: TextDirection.ltr, platform: iOS)
-        child: RenderPadding#ddc53 relayoutBoundary=up4
+        configuration: ImageConfiguration(bundle: PlatformAssetBundle#2b730(), devicePixelRatio: 2.8, locale: en_US, textDirection: TextDirection.ltr, platform: android)
+        child: RenderPadding#027a1 relayoutBoundary=up4
             parentData: <none> (can use size)
             constraints: BoxConstraints(unconstrained)
-            size: Size(80.6, 50.0)
+            size: Size(78.6, 50.0)
             padding: EdgeInsets(20.0, 12.0, 20.0, 12.0)
             textDirection: ltr
-            child: RenderFlex#8dc4c relayoutBoundary=up5
+            child: RenderFlex#d6f76 relayoutBoundary=up5
                 parentData: offset=Offset(20.0, 12.0) (can use size)
                 constraints: BoxConstraints(unconstrained)
-                size: Size(40.6, 26.0)
+                size: Size(38.6, 26.0)
                 direction: horizontal
                 mainAxisAlignment: start
                 mainAxisSize: min
@@ -50,44 +52,44 @@ The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OV
                 textDirection: ltr
                 verticalDirection: down
                 spacing: 0.0
-                child 1: RenderSemanticsAnnotations#d7e62 relayoutBoundary=up6
+                child 1: RenderSemanticsAnnotations#4157b relayoutBoundary=up6
                     parentData: offset=Offset(0.0, 3.0); flex=null; fit=null (can use size)
                     constraints: BoxConstraints(unconstrained)
                     size: Size(20.0, 20.0)
-                child 2: RenderConstrainedBox#39813 relayoutBoundary=up6
+                child 2: RenderConstrainedBox#8d9b1 relayoutBoundary=up6
                     parentData: offset=Offset(20.0, 13.0); flex=null; fit=null (can use size)
                     constraints: BoxConstraints(unconstrained)
                     size: Size(8.0, 0.0)
                     additionalConstraints: BoxConstraints(w=8.0, 0.0<=h<=Infinity)
-                child 3: RenderParagraph#400e1 relayoutBoundary=up6
+                child 3: RenderParagraph#dcec8 relayoutBoundary=up6
                     parentData: offset=Offset(28.0, 0.0); flex=null; fit=null (can use size)
                     constraints: BoxConstraints(unconstrained)
-                    size: Size(12.6, 26.0)
+                    size: Size(10.6, 26.0)
                     textAlign: start
                     textDirection: ltr
                     softWrap: wrapping at box width
                     overflow: clip
                     locale: en_US
                     maxLines: unlimited
-    child 2: RenderDecoratedBox#af49c relayoutBoundary=up3
-        parentData: offset=Offset(80.6, 0.0); flex=null; fit=null (can use size)
+    child 2: RenderDecoratedBox#922bc relayoutBoundary=up3
+        parentData: offset=Offset(78.6, 0.0); flex=null; fit=null (can use size)
         constraints: BoxConstraints(unconstrained)
-        size: Size(130.6, 50.0)
+        size: Size(127.4, 50.0)
         decoration: BoxDecoration
             borderRadius: BorderRadius.circular(25.0)
             boxShadow: BoxShadow(Color(alpha: 0.3000, red: 0.9137, green: 0.1176, blue: 0.3882, colorSpace: ColorSpace.sRGB), Offset(0.0, 5.0), 10.0, 0.0, BlurStyle.normal)
             gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(alpha: 1.0000, red: 0.9412, green: 0.5765, blue: 0.9843, colorSpace: ColorSpace.sRGB), Color(alpha: 1.0000, red: 0.9608, green: 0.3412, blue: 0.4235, colorSpace: ColorSpace.sRGB)], tileMode: TileMode.clamp)
-        configuration: ImageConfiguration(bundle: PlatformAssetBundle#1b371(), devicePixelRatio: 3.0, locale: en_US, textDirection: TextDirection.ltr, platform: iOS)
-        child: RenderPadding#32d1a relayoutBoundary=up4
+        configuration: ImageConfiguration(bundle: PlatformAssetBundle#2b730(), devicePixelRatio: 2.8, locale: en_US, textDirection: TextDirection.ltr, platform: android)
+        child: RenderPadding#45407 relayoutBoundary=up4
             parentData: <none> (can use size)
             constraints: BoxConstraints(unconstrained)
-            size: Size(130.6, 50.0)
+            size: Size(127.4, 50.0)
             padding: EdgeInsets(20.0, 12.0, 20.0, 12.0)
             textDirection: ltr
-            child: RenderFlex#c996d relayoutBoundary=up5
+            child: RenderFlex#4f58f relayoutBoundary=up5
                 parentData: offset=Offset(20.0, 12.0) (can use size)
                 constraints: BoxConstraints(unconstrained)
-                size: Size(90.6, 26.0)
+                size: Size(87.4, 26.0)
                 direction: horizontal
                 mainAxisAlignment: start
                 mainAxisSize: min
@@ -95,29 +97,29 @@ The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OV
                 textDirection: ltr
                 verticalDirection: down
                 spacing: 0.0
-                child 1: RenderSemanticsAnnotations#b5887 relayoutBoundary=up6
+                child 1: RenderSemanticsAnnotations#4f7ec relayoutBoundary=up6
                     parentData: offset=Offset(0.0, 3.0); flex=null; fit=null (can use size)
                     constraints: BoxConstraints(unconstrained)
                     size: Size(20.0, 20.0)
-                child 2: RenderConstrainedBox#daba7 relayoutBoundary=up6
+                child 2: RenderConstrainedBox#70dd5 relayoutBoundary=up6
                     parentData: offset=Offset(20.0, 13.0); flex=null; fit=null (can use size)
                     constraints: BoxConstraints(unconstrained)
                     size: Size(8.0, 0.0)
                     additionalConstraints: BoxConstraints(w=8.0, 0.0<=h<=Infinity)
-                child 3: RenderParagraph#d6b53 relayoutBoundary=up6
+                child 3: RenderParagraph#6dd11 relayoutBoundary=up6
                     parentData: offset=Offset(28.0, 0.0); flex=null; fit=null (can use size)
                     constraints: BoxConstraints(unconstrained)
-                    size: Size(62.6, 26.0)
+                    size: Size(59.4, 26.0)
                     textAlign: start
                     textDirection: ltr
                     softWrap: wrapping at box width
                     overflow: clip
                     locale: en_US
                     maxLines: unlimited
-    child 3: RenderFlex#d82fe relayoutBoundary=up3
-        parentData: offset=Offset(211.2, 1.0); flex=null; fit=null (can use size)
+    child 3: RenderFlex#5ee02 relayoutBoundary=up3
+        parentData: offset=Offset(206.0, 1.0); flex=null; fit=null (can use size)
         constraints: BoxConstraints(unconstrained)
-        size: Size(195.4, 48.0)
+        size: Size(194.9, 48.0)
         direction: horizontal
         mainAxisAlignment: start
         mainAxisSize: max
@@ -125,25 +127,25 @@ The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OV
         textDirection: ltr
         verticalDirection: down
         spacing: 0.0
-        child 1: RenderDecoratedBox#603cd relayoutBoundary=up4
+        child 1: RenderDecoratedBox#64938 relayoutBoundary=up4
             parentData: offset=Offset(0.0, 2.5); flex=null; fit=null (can use size)
             constraints: BoxConstraints(unconstrained)
-            size: Size(65.0, 43.0)
+            size: Size(63.4, 43.0)
             decoration: BoxDecoration
                 borderRadius: BorderRadius.circular(20.0)
                 boxShadow: BoxShadow(Color(alpha: 0.3000, red: 0.2980, green: 0.6863, blue: 0.3137, colorSpace: ColorSpace.sRGB), Offset(0.0, 3.0), 8.0, 0.0, BlurStyle.normal)
                 gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(alpha: 1.0000, red: 0.2627, green: 0.9137, blue: 0.4824, colorSpace: ColorSpace.sRGB), Color(alpha: 1.0000, red: 0.2196, green: 0.9765, blue: 0.8431, colorSpace: ColorSpace.sRGB)], tileMode: TileMode.clamp)
-            configuration: ImageConfiguration(bundle: PlatformAssetBundle#1b371(), devicePixelRatio: 3.0, locale: en_US, textDirection: TextDirection.ltr, platform: iOS)
-            child: RenderPadding#ea1ee relayoutBoundary=up5
+            configuration: ImageConfiguration(bundle: PlatformAssetBundle#2b730(), devicePixelRatio: 2.8, locale: en_US, textDirection: TextDirection.ltr, platform: android)
+            child: RenderPadding#50ac1 relayoutBoundary=up5
                 parentData: <none> (can use size)
                 constraints: BoxConstraints(unconstrained)
-                size: Size(65.0, 43.0)
+                size: Size(63.4, 43.0)
                 padding: EdgeInsets(15.0, 10.0, 15.0, 10.0)
                 textDirection: ltr
-                child: RenderFlex#06ddb relayoutBoundary=up6
+                child: RenderFlex#274d1 relayoutBoundary=up6
                     parentData: offset=Offset(15.0, 10.0) (can use size)
                     constraints: BoxConstraints(unconstrained)
-                    size: Size(35.0, 23.0)
+                    size: Size(33.4, 23.0)
                     direction: horizontal
                     mainAxisAlignment: start
                     mainAxisSize: min
@@ -151,30 +153,30 @@ The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OV
                     textDirection: ltr
                     verticalDirection: down
                     spacing: 0.0
-        child 2: RenderConstrainedBox#f619c relayoutBoundary=up4
-            parentData: offset=Offset(65.0, 24.0); flex=null; fit=null (can use size)
+        child 2: RenderConstrainedBox#2d49c relayoutBoundary=up4
+            parentData: offset=Offset(63.4, 24.0); flex=null; fit=null (can use size)
             constraints: BoxConstraints(unconstrained)
             size: Size(10.0, 0.0)
             additionalConstraints: BoxConstraints(w=10.0, 0.0<=h<=Infinity)
-        child 3: RenderDecoratedBox#5db93 relayoutBoundary=up4
-            parentData: offset=Offset(75.0, 2.5); flex=null; fit=null (can use size)
+        child 3: RenderDecoratedBox#41e55 relayoutBoundary=up4
+            parentData: offset=Offset(73.4, 2.5); flex=null; fit=null (can use size)
             constraints: BoxConstraints(unconstrained)
-            size: Size(62.4, 43.0)
+            size: Size(63.4, 43.0)
             decoration: BoxDecoration
                 borderRadius: BorderRadius.circular(20.0)
                 boxShadow: BoxShadow(Color(alpha: 0.3000, red: 0.1294, green: 0.5882, blue: 0.9529, colorSpace: ColorSpace.sRGB), Offset(0.0, 3.0), 8.0, 0.0, BlurStyle.normal)
                 gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(alpha: 1.0000, red: 0.3098, green: 0.6745, blue: 0.9961, colorSpace: ColorSpace.sRGB), Color(alpha: 1.0000, red: 0.0000, green: 0.9490, blue: 0.9961, colorSpace: ColorSpace.sRGB)], tileMode: TileMode.clamp)
-            configuration: ImageConfiguration(bundle: PlatformAssetBundle#1b371(), devicePixelRatio: 3.0, locale: en_US, textDirection: TextDirection.ltr, platform: iOS)
-            child: RenderPadding#8615e relayoutBoundary=up5
+            configuration: ImageConfiguration(bundle: PlatformAssetBundle#2b730(), devicePixelRatio: 2.8, locale: en_US, textDirection: TextDirection.ltr, platform: android)
+            child: RenderPadding#b9ddb relayoutBoundary=up5
                 parentData: <none> (can use size)
                 constraints: BoxConstraints(unconstrained)
-                size: Size(62.4, 43.0)
+                size: Size(63.4, 43.0)
                 padding: EdgeInsets(15.0, 10.0, 15.0, 10.0)
                 textDirection: ltr
-                child: RenderFlex#8568b relayoutBoundary=up6
+                child: RenderFlex#2e66c relayoutBoundary=up6
                     parentData: offset=Offset(15.0, 10.0) (can use size)
                     constraints: BoxConstraints(unconstrained)
-                    size: Size(32.4, 23.0)
+                    size: Size(33.4, 23.0)
                     direction: horizontal
                     mainAxisAlignment: start
                     mainAxisSize: min
@@ -182,27 +184,27 @@ The specific RenderFlex in question is: RenderFlex#49f31 relayoutBoundary=up2 OV
                     textDirection: ltr
                     verticalDirection: down
                     spacing: 0.0
-        child 4: RenderConstrainedBox#afcbb relayoutBoundary=up4
-            parentData: offset=Offset(137.4, 24.0); flex=null; fit=null (can use size)
+        child 4: RenderConstrainedBox#fd48d relayoutBoundary=up4
+            parentData: offset=Offset(136.9, 24.0); flex=null; fit=null (can use size)
             constraints: BoxConstraints(unconstrained)
             size: Size(10.0, 0.0)
             additionalConstraints: BoxConstraints(w=10.0, 0.0<=h<=Infinity)
-        child 5: RenderDecoratedBox#b41e6 relayoutBoundary=up4
-            parentData: offset=Offset(147.4, 0.0); flex=null; fit=null (can use size)
+        child 5: RenderDecoratedBox#0b4e4 relayoutBoundary=up4
+            parentData: offset=Offset(146.9, 0.0); flex=null; fit=null (can use size)
             constraints: BoxConstraints(unconstrained)
             size: Size(48.0, 48.0)
             decoration: BoxDecoration
                 borderRadius: BorderRadius.circular(25.0)
                 boxShadow: BoxShadow(Color(alpha: 0.3000, red: 0.6118, green: 0.1529, blue: 0.6902, colorSpace: ColorSpace.sRGB), Offset(0.0, 5.0), 10.0, 0.0, BlurStyle.normal)
                 gradient: LinearGradient(begin: Alignment.centerLeft, end: Alignment.centerRight, colors: [Color(alpha: 1.0000, red: 0.4000, green: 0.4941, blue: 0.9176, colorSpace: ColorSpace.sRGB), Color(alpha: 1.0000, red: 0.4627, green: 0.2941, blue: 0.6353, colorSpace: ColorSpace.sRGB)], tileMode: TileMode.clamp)
-            configuration: ImageConfiguration(bundle: PlatformAssetBundle#1b371(), devicePixelRatio: 3.0, locale: en_US, textDirection: TextDirection.ltr, platform: iOS)
-            child: RenderPadding#46502 relayoutBoundary=up5
+            configuration: ImageConfiguration(bundle: PlatformAssetBundle#2b730(), devicePixelRatio: 2.8, locale: en_US, textDirection: TextDirection.ltr, platform: android)
+            child: RenderPadding#75f5c relayoutBoundary=up5
                 parentData: <none> (can use size)
                 constraints: BoxConstraints(unconstrained)
                 size: Size(48.0, 48.0)
                 padding: EdgeInsets.zero
                 textDirection: ltr
-                child: RenderSemanticsAnnotations#498fa relayoutBoundary=up6
+                child: RenderSemanticsAnnotations#a9802 relayoutBoundary=up6
                     parentData: offset=Offset(0.0, 0.0) (can use size)
                     constraints: BoxConstraints(unconstrained)
                     semantic boundary

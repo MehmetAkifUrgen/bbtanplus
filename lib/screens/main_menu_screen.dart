@@ -83,27 +83,22 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                 const SizedBox(height: 20),
               ],
               
-              _buildMenuButton(
-                context,
-                'LEVELS',
-                Icons.grid_view,
-                () => Navigator.pushNamed(context, '/levels'),
-              ),
-              const SizedBox(height: 20),
+             
+            
+              
+              
               
               _buildMenuButton(
                 context,
-                'MISSIONS',
-                Icons.assignment,
-                () => Navigator.pushNamed(context, '/missions'),
-              ),
-              const SizedBox(height: 20),
-              
-              _buildMenuButton(
-                context,
-                'QUICK PLAY',
+                'YENİ OYUN',
                 Icons.play_arrow,
-                () => Navigator.pushNamed(context, '/game'),
+                () {
+                  _gameState.clearSavedGame().then((_) {
+                    if (mounted) {
+                      Navigator.pushNamed(context, '/game');
+                    }
+                  });
+                },
               ),
               const SizedBox(height: 20),
               
@@ -123,13 +118,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               ),
               const SizedBox(height: 20),
               
-              _buildMenuButton(
-                context,
-                'HIGH SCORES',
-                Icons.leaderboard,
-                () => Navigator.pushNamed(context, '/score'),
-              ),
-              const SizedBox(height: 20),
+             
               
               _buildMenuButton(
                 context,
