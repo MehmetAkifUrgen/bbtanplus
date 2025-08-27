@@ -1,3 +1,5 @@
+
+
 import 'package:bbtanpluso3/models/game_state.dart';
 
 import '../components/brick.dart';
@@ -107,6 +109,22 @@ class Level {
     'stars': stars,
   };
 
+  static BrickType? _getBrickTypeFromIndex(int index) {
+    // Handle old saved data that might have explosive (1) or time (2) types
+    switch (index) {
+      case 0:
+        return BrickType.normal;
+      case 1: // old explosive -> convert to normal
+        return BrickType.normal;
+      case 2: // old time -> convert to normal
+        return BrickType.normal;
+      case 3:
+        return BrickType.teleport;
+      default:
+        return BrickType.normal;
+    }
+  }
+
   factory Level.fromJson(Map<String, dynamic> json) => Level(
     levelNumber: json['levelNumber'],
     name: json['name'],
@@ -116,7 +134,7 @@ class Level {
     columns: json['columns'],
     brickLayout: (json['brickLayout'] as List).map((row) => 
         (row as List).map((brick) => 
-            brick != null ? BrickType.values[brick] : null).toList()).toList(),
+            brick != null ? _getBrickTypeFromIndex(brick) : null).toList()).toList(),
     targetScore: json['targetScore'],
     maxBalls: json['maxBalls'],
     baseHitPoints: json['baseHitPoints'] ?? 1,

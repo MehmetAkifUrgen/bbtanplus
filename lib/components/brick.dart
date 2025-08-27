@@ -119,10 +119,6 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
       switch (brickType) {
         case BrickType.normal:
           return themeColors!.normalBrick;
-        case BrickType.explosive:
-          return themeColors!.explosiveBrick;
-        case BrickType.time:
-          return themeColors!.timeBrick;
         case BrickType.teleport:
           return themeColors!.teleportBrick;
       }
@@ -132,10 +128,6 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
     switch (brickType) {
       case BrickType.normal:
         return Colors.blue;
-      case BrickType.explosive:
-        return Colors.red;
-      case BrickType.time:
-        return Colors.purple;
       case BrickType.teleport:
         return Colors.green;
     }
@@ -155,14 +147,6 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
   
   void _handleSpecialEffect() {
     switch (brickType) {
-      case BrickType.explosive:
-        // Explosive bricks damage nearby bricks when hit
-        _explodeNearbyBricks();
-        break;
-      case BrickType.time:
-        // Time bricks slow down time when hit
-        game.gameState.activateTimeEffect('timeSlow', 3.0);
-        break;
       case BrickType.teleport:
         // Teleport bricks move to a random position when hit
         _teleportToRandomPosition();
@@ -173,18 +157,7 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
     }
   }
   
-  void _explodeNearbyBricks() {
-    final explosionRadius = 100.0;
-    final nearbyBricks = game.children.whereType<Brick>().where((brick) {
-      if (brick == this) return false;
-      final distance = (brick.position - position).length;
-      return distance <= explosionRadius;
-    });
-    
-    for (final brick in nearbyBricks) {
-      brick.hit(); // Chain reaction possible
-    }
-  }
+
   
   void _teleportToRandomPosition() {
     final random = Random();
@@ -1327,20 +1300,6 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
   
   void _renderSpecialEffects(Canvas canvas) {
     switch (brickType) {
-      case BrickType.explosive:
-        // Add pulsing glow effect
-        final glowPaint = Paint()
-          ..color = Colors.red.withValues(alpha: 0.3)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-        canvas.drawRect(Offset.zero & size.toSize(), glowPaint);
-        break;
-      case BrickType.time:
-        // Add shimmering effect
-        final shimmerPaint = Paint()
-          ..color = Colors.purple.withValues(alpha: 0.2)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-        canvas.drawRect(Offset.zero & size.toSize(), shimmerPaint);
-        break;
       case BrickType.teleport:
         // Add sparkling border
         final borderPaint = Paint()
@@ -1361,29 +1320,6 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
       ..strokeWidth = 2.0;
     
     switch (brickType) {
-      case BrickType.explosive:
-        paint.color = Colors.orange;
-        // Draw explosion symbol
-        canvas.drawCircle(
-          Offset(size.x - 10, 10),
-          5,
-          paint,
-        );
-        break;
-      case BrickType.time:
-        paint.color = Colors.yellow;
-        // Draw clock symbol
-        canvas.drawCircle(
-          Offset(size.x - 10, 10),
-          5,
-          paint,
-        );
-        canvas.drawLine(
-          Offset(size.x - 10, 10),
-          Offset(size.x - 10, 5),
-          paint,
-        );
-        break;
       case BrickType.teleport:
         paint.color = Colors.cyan;
         // Draw teleport symbol

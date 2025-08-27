@@ -2,11 +2,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class GameState {
-  bool isTimeFrozen = false;
-  bool isTimeSlowed = false;
-  double timeFreezeRemaining = 0.0;
-  double timeSlowRemaining = 0.0;
-  
   int score = 0;
   int level = 1;
   int ballsRemaining = 1;
@@ -17,52 +12,14 @@ class GameState {
   DateTime? lastSaveTime;
   
   void update(double dt) {
-    if (isTimeFrozen) {
-      timeFreezeRemaining -= dt;
-      if (timeFreezeRemaining <= 0) {
-        isTimeFrozen = false;
-        timeFreezeRemaining = 0.0;
-      }
-    }
-    
-    if (isTimeSlowed) {
-      timeSlowRemaining -= dt;
-      if (timeSlowRemaining <= 0) {
-        isTimeSlowed = false;
-        timeSlowRemaining = 0.0;
-      }
-    }
-  }
-  
-  void activateTimeFreeze(double duration) {
-    isTimeFrozen = true;
-    timeFreezeRemaining = duration;
-  }
-  
-  void activateTimeSlow(double duration) {
-    isTimeSlowed = true;
-    timeSlowRemaining = duration;
+    // No time effects to update
   }
   
   double getTimeMultiplier() {
-    if (isTimeFrozen) return 0.0;
-    if (isTimeSlowed) return 0.3;
     return 1.0;
   }
   
-  void activateTimeEffect(String effectType, double duration) {
-    if (effectType == 'timeFreeze') {
-      activateTimeFreeze(duration);
-    } else if (effectType == 'timeSlow') {
-      activateTimeSlow(duration);
-    }
-  }
-  
   void reset() {
-    isTimeFrozen = false;
-    isTimeSlowed = false;
-    timeFreezeRemaining = 0.0;
-    timeSlowRemaining = 0.0;
     score = 0;
     level = 1;
     ballsRemaining = 1;
@@ -77,10 +34,6 @@ class GameState {
     lastSaveTime = DateTime.now();
     
     final gameStateJson = {
-      'isTimeFrozen': isTimeFrozen,
-      'isTimeSlowed': isTimeSlowed,
-      'timeFreezeRemaining': timeFreezeRemaining,
-      'timeSlowRemaining': timeSlowRemaining,
       'score': score,
       'level': level,
       'ballsRemaining': ballsRemaining,
@@ -104,10 +57,6 @@ class GameState {
     try {
       final gameStateJson = jsonDecode(savedStateString) as Map<String, dynamic>;
       
-      isTimeFrozen = gameStateJson['isTimeFrozen'] ?? false;
-      isTimeSlowed = gameStateJson['isTimeSlowed'] ?? false;
-      timeFreezeRemaining = gameStateJson['timeFreezeRemaining']?.toDouble() ?? 0.0;
-      timeSlowRemaining = gameStateJson['timeSlowRemaining']?.toDouble() ?? 0.0;
       score = gameStateJson['score'] ?? 0;
       level = gameStateJson['level'] ?? 1;
       ballsRemaining = gameStateJson['ballsRemaining'] ?? 1;
@@ -141,7 +90,5 @@ class GameState {
 
 enum BrickType {
   normal,
-  explosive,
-  time,
   teleport,
 }

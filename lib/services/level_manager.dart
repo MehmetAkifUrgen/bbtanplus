@@ -260,7 +260,6 @@ class LevelManager {
     return List.generate(rows, (row) => 
         List.generate(columns, (col) {
           if ((row + col) % 6 == 0) return null;
-          if ((row + col) % 3 == 0) return BrickType.explosive;
           return BrickType.normal;
         }));
   }
@@ -269,8 +268,6 @@ class LevelManager {
     return List.generate(rows, (row) => 
         List.generate(columns, (col) {
           if ((row + col) % 8 == 0) return null;
-          if (row % 2 == 0 && col % 3 == 0) return BrickType.time;
-          if ((row + col) % 4 == 0) return BrickType.explosive;
           return BrickType.normal;
         }));
   }
@@ -281,7 +278,6 @@ class LevelManager {
           if ((row + col) % 10 == 0) return null;
           if (row == 0 && col % 4 == 0) return BrickType.teleport;
           if (row == rows - 1 && col % 4 == 2) return BrickType.teleport;
-          if ((row + col) % 5 == 0) return BrickType.explosive;
           return BrickType.normal;
         }));
   }
@@ -291,8 +287,6 @@ class LevelManager {
         List.generate(columns, (col) {
           if ((row + col) % 12 == 0) return null;
           if (row % 3 == 0 && col % 3 == 0) return BrickType.teleport;
-          if ((row + col) % 4 == 0) return BrickType.explosive;
-          if (row % 2 == 1 && col % 4 == 1) return BrickType.time;
           return BrickType.normal;
         }));
   }
@@ -301,7 +295,6 @@ class LevelManager {
     return List.generate(rows, (row) => 
         List.generate(columns, (col) {
           if (col % 3 == 1) return null; // More empty spaces for speed
-          if (row % 2 == 0) return BrickType.time; // More time bricks
           return BrickType.normal;
         }));
   }
@@ -311,7 +304,7 @@ class LevelManager {
         List.generate(columns, (col) {
           // Create fortress walls
           if (row == 0 || row == rows - 1 || col == 0 || col == columns - 1) {
-            return BrickType.explosive;
+            return BrickType.normal;
           }
           if (row == 1 || row == rows - 2 || col == 1 || col == columns - 2) {
             return (row + col) % 3 == 0 ? null : BrickType.normal;
@@ -326,8 +319,6 @@ class LevelManager {
         List.generate(columns, (col) {
           final seed = (row * columns + col + random) % 10;
           if (seed == 0) return null;
-          if (seed <= 2) return BrickType.explosive;
-          if (seed <= 4) return BrickType.time;
           if (seed <= 6) return BrickType.teleport;
           return BrickType.normal;
         }));
@@ -339,8 +330,6 @@ class LevelManager {
           // Complex pattern for master level
           if ((row + col) % 15 == 0) return null;
           if (row % 3 == 0 && col % 3 == 0) return BrickType.teleport;
-          if ((row - col).abs() % 4 == 0) return BrickType.explosive;
-          if ((row + col) % 5 == 0) return BrickType.time;
           return BrickType.normal;
         }));
   }

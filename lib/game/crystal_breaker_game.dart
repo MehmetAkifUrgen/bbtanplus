@@ -280,15 +280,9 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     final chance = random.nextDouble();
     
     // Increase special brick chances with level progression
-    final explosiveChance = 0.05 + (level * 0.01); // Start at 5%, increase 1% per level
-    final timeChance = explosiveChance + 0.03 + (level * 0.005); // Start at 8%, increase 0.5% per level
-    final teleportChance = timeChance + 0.03 + (level * 0.005); // Start at 11%, increase 0.5% per level
+    final teleportChance = 0.08 + (level * 0.01); // Start at 8%, increase 1% per level
     
-    if (chance < explosiveChance) {
-      return BrickType.explosive;
-    } else if (chance < timeChance) {
-      return BrickType.time;
-    } else if (chance < teleportChance) {
+    if (chance < teleportChance) {
       return BrickType.teleport;
     } else {
       return BrickType.normal;
@@ -380,10 +374,6 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
 
   BrickType _brickTypeFromString(String type) {
     switch (type) {
-      case 'explosive':
-        return BrickType.explosive;
-      case 'time':
-        return BrickType.time;
       case 'teleport':
         return BrickType.teleport;
       default:
@@ -754,12 +744,6 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     
     // Handle special brick effects
     switch (brick.brickType) {
-      case BrickType.explosive:
-        _explodeBrick(brick);
-        break;
-      case BrickType.time:
-        _activateTimeSlow();
-        break;
       case BrickType.teleport:
         _teleportBrick(brick);
         break;
@@ -770,32 +754,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
 
   }
   
-  void _explodeBrick(Brick brick) {
-    final explosionRadius = 100.0;
-    final bricksToDestroy = <Brick>[];
-    
-    // Add explosion particle effect
-    final explosionEffect = ParticleEffects.createExplosionEffect(brick.position);
-    add(explosionEffect);
-    
-    for (final otherBrick in bricks) {
-      if (otherBrick != brick) {
-        final distance = brick.position.distanceTo(otherBrick.position);
-        if (distance <= explosionRadius) {
-          bricksToDestroy.add(otherBrick);
-        }
-      }
-    }
-    
-    for (final brickToDestroy in bricksToDestroy) {
-      brickToDestroy.destroy();
-    }
-  }
-  
-  void _activateTimeSlow() {
-    // Implement time slow effect
-    gameState.activateTimeSlow(3.0); // 3 seconds
-  }
+
   
   void _teleportBrick(Brick brick) {
     final random = Random();

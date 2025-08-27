@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/game_state.dart';
 
 class MainMenuScreen extends StatefulWidget {
@@ -28,36 +29,27 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1a1a2e),
-              Color(0xFF16213e),
-              Color(0xFF0f3460),
-            ],
-          ),
-        ),
+        color: Colors.black,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
               // Game Title
-              const Text(
+              Text(
                 'CRYSTAL\nBREAKER 3D',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.orbitron(
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                   shadows: [
-                    Shadow(
+                    const Shadow(
                       offset: Offset(2, 2),
                       blurRadius: 4,
-                      color: Colors.blue,
+                      color: Colors.grey,
                     ),
                   ],
                 ),
@@ -104,14 +96,6 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
               
               _buildMenuButton(
                 context,
-                'CUSTOMIZATION',
-                Icons.palette,
-                () => Navigator.pushNamed(context, '/customization'),
-              ),
-              const SizedBox(height: 20),
-              
-              _buildMenuButton(
-                context,
                 'SETTINGS',
                 Icons.settings,
                 () => Navigator.pushNamed(context, '/settings'),
@@ -143,16 +127,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       height: 60,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        border: Border.all(color: Colors.white, width: 2),
+        color: Colors.transparent,
       ),
       child: ElevatedButton(
         onPressed: onPressed,
@@ -170,7 +146,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
             const SizedBox(width: 10),
             Text(
               text,
-              style: const TextStyle(
+              style: GoogleFonts.orbitron(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

@@ -17,7 +17,7 @@ class CrystalBreakerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Crystal Breaker 3D',
+      title: 'CCTAN',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
