@@ -28,10 +28,11 @@ class Brick extends RectangleComponent with CollisionCallbacks, HasGameReference
     required this.hitPoints,
     required this.brickType,
     this.themeColors,
+    Vector2? customSize,
   }) : maxHitPoints = hitPoints,
        super(
          position: position,
-         size: Vector2(50, 50), // Square size for better character display
+         size: customSize ?? Vector2(50, 50), // Use custom size or default
        ) {
     // Check if this is a dragon brick (lowered threshold)
     isDragon = hitPoints >= 20;

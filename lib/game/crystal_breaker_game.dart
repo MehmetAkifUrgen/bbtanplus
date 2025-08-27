@@ -47,10 +47,12 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   
   // Game constants
   static const double baseBallSpeed = 600.0;
-  static const double brickRowHeight = 45.0; // Reduced for tighter spacing
-  static const double brickWidth = 60.0; // Match brick component size
-  static const double brickHeight = 35.0; // Match brick component size
-  static const int bricksPerRow = 9; // Increased to fit more characters
+  static const int bricksPerRow = 8; // Fewer bricks for larger size
+  
+  // Dynamic brick dimensions based on screen size - full width coverage
+  double get brickWidth => size.x / bricksPerRow; // No margins, full width
+  double get brickHeight => brickWidth * 1.1; // Even taller bricks
+  double get brickRowHeight => brickHeight; // No gap between rows
   
   // Dynamic difficulty properties
   double get currentBallSpeed => baseBallSpeed; // Keep ball speed constant
@@ -121,19 +123,19 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   }
   
   void _addWalls() {
-    // Left wall with visible border
+    // Left wall - positioned at screen edge
     final leftWall = RectangleComponent(
-      position: Vector2(-10, 100),
-      size: Vector2(10, size.y - 100),
+      position: Vector2(-1, 100),
+      size: Vector2(1, size.y - 100),
       paint: Paint()..color = Colors.transparent,
     );
     leftWall.add(RectangleHitbox());
     add(leftWall);
     
-    // Right wall with visible border
+    // Right wall - positioned at screen edge
     final rightWall = RectangleComponent(
       position: Vector2(size.x, 100),
-      size: Vector2(10, size.y - 100),
+      size: Vector2(1, size.y - 100),
       paint: Paint()..color = Colors.transparent,
     );
     rightWall.add(RectangleHitbox());
@@ -155,12 +157,8 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     final random = Random();
     final currentLevel = levelManager.getLevel(level);
     
-    // Calculate safe boundaries for bricks with tighter spacing
-    final brickMargin = 10.0; // Reduced margin from screen edges
-    final availableWidth = size.x - (2 * brickMargin);
-    final brickSpacing = availableWidth / bricksPerRow;
-    final minBrickSpacing = brickWidth + 2.0; // Minimum 2px gap between bricks
-    final actualBrickSpacing = math.max(brickSpacing, minBrickSpacing);
+    // Calculate responsive brick spacing - full width coverage
+    final actualBrickSpacing = size.x / bricksPerRow;
     
     // Use level manager's difficulty settings
     final baseHitPoints = currentLevel?.baseHitPoints ?? 1;
@@ -177,14 +175,10 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
         if (random.nextDouble() < brickChance) {
           final currentThemeColors = themeManager.getThemeColors(themeManager.currentTheme);
           
-          // Calculate brick position with proper boundaries and spacing
-          final brickX = brickMargin + (i * actualBrickSpacing) + (actualBrickSpacing / 2);
+          // Calculate brick position - align to left edge with no gaps
+          final brickX = i * brickWidth;
           
-          // Ensure brick stays within screen bounds
-          final clampedX = brickX.clamp(brickMargin + (brickWidth / 2), 
-                                       size.x - brickMargin - (brickWidth / 2));
-          
-          final proposedPosition = Vector2(clampedX, currentRowY);
+          final proposedPosition = Vector2(brickX, currentRowY);
           
           // Check if this position overlaps with existing bricks
           if (!_isPositionOccupied(proposedPosition)) {
@@ -193,6 +187,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
               hitPoints: _calculateBrickHitPoints(baseHitPoints, random),
               brickType: _getRandomBrickType(),
               themeColors: currentThemeColors,
+              customSize: Vector2(brickWidth, brickHeight), // Pass responsive size
             );
             bricks.add(brick);
             add(brick);
@@ -203,28 +198,11 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   }
   
   double _findLowestAvailableRow() {
-    // Start from the top and find the first available row
+    // BBTan style: Always generate new bricks from the top
     double startY = 100; // Below top wall
     
-    // If no bricks exist, start at the top
-    if (bricks.isEmpty) {
-      return startY;
-    }
-    
-    // Find the topmost brick position
-    double topmostY = bricks.map((brick) => brick.position.y).reduce((a, b) => a < b ? a : b);
-    
-    // Calculate new position above the topmost existing brick
-    double newY = topmostY - brickRowHeight;
-    
-    // Ensure bricks don't go above the top boundary (100px from top)
-    if (newY < startY) {
-      // If bricks would go above boundary, shift all existing bricks down
-      _shiftBricksDown(startY - newY);
-      return startY;
-    }
-    
-    return newY;
+    // Always return the top position for new bricks
+    return startY;
   }
   
   bool _isPositionOccupied(Vector2 position) {
