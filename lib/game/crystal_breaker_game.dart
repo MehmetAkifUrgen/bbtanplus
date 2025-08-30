@@ -43,6 +43,11 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
   double burnDamageTimer = 0.0;
   double burnDamageInterval = 1.0; // Damage every second
   
+  // Rewarded ad system for game over
+  bool isGameOverState = false;
+  bool canWatchAd = true;
+  Function? onAdWatched; // Callback for when ad is watched
+  
   // Dragon fire attack system removed
   
   // Game constants
@@ -603,6 +608,11 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
 
     // Capture snapshot for automatic persistence after each round
     captureGameState();
+    
+    // Automatically save game state after each ball throw
+    gameState.saveGameState().catchError((error) {
+      print('Error auto-saving game state: $error');
+    });
   }
   
   void _moveBricksDown() {
@@ -652,7 +662,7 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     
     // Check if player is dead
     if (playerLives <= 0) {
-      _gameOver();
+      gameOver();
     }
   }
   
@@ -677,15 +687,27 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     for (final brick in bricks) {
       if (brick.position.y > size.y - 150) {
         // Start burning effect when bricks reach player
-        if (!isBurning) {
+        if (!isBurning && !isGameOverState) {
           startBurning(5.0); // Burn for 5 seconds
+          isGameOverState = true;
+          
+          // Pause the game and show rewarded ad option
+          pauseEngine();
+          
+          // Trigger rewarded ad callback if available
+          if (canWatchAd && onAdWatched != null) {
+            onAdWatched!();
+          } else {
+            // If no ad system available, just game over
+            gameOver();
+          }
         }
         return;
       }
     }
   }
   
-  void _gameOver() {
+  void gameOver() {
     // Notify mission manager of final score
     missionManager.onScoreAchieved(score);
     
@@ -704,6 +726,93 @@ class CrystalBreakerGame extends FlameGame with HasCollisionDetection {
     pauseEngine();
     // Navigate to score screen with current score
     // This would be handled by the parent widget
+  }
+
+  // Function to remove ONLY the bottom-most brick row after watching ad
+  void removeBottomBrickRow() {
+    print('removeBottomBrickRow called');
+    print('Total bricks before removal: ${bricks.length}');
+    
+    if (bricks.isEmpty) {
+      print('No bricks to remove');
+      return;
+    }
+
+    // Helper to map a brick to its row index (top wall starts at y = 100)
+    const double topWallY = 100;
+    int _rowIndex(Brick b) => ((b.position.y - topWallY) / brickRowHeight).floor();
+
+    // Player level (same as _checkGameOver threshold)
+    final double playerLevel = size.y - 150;
+    print('Player level: $playerLevel');
+    print('Brick row height: $brickRowHeight');
+
+    // Print all brick positions for debugging
+    print('All brick positions:');
+    for (int i = 0; i < bricks.length; i++) {
+      print('  Brick $i: Y=${bricks[i].position.y.toStringAsFixed(2)}');
+    }
+
+    // Always target the bottom-most row (highest Y value)
+    double targetRowY = bricks
+        .map((brick) => brick.position.y)
+        .reduce((a, b) => a > b ? a : b);
+    
+    print('Always targeting bottom-most row (highest Y)');
+    print('Bottom-most Y found: ${targetRowY.toStringAsFixed(2)}');
+
+    print('Target row Y: ${targetRowY.toStringAsFixed(2)}');
+
+    const double tolerance = 1.0; // full row height tolerance
+    final toleranceValue = brickRowHeight * tolerance;
+    print('Tolerance value: ${toleranceValue.toStringAsFixed(2)}');
+    
+    final bricksToRemove = bricks
+         .where((brick) {
+           final distance = (brick.position.y - targetRowY).abs();
+           final shouldRemove = distance <= toleranceValue;
+           print('  Brick Y=${brick.position.y.toStringAsFixed(2)}, distance=${distance.toStringAsFixed(2)}, remove=$shouldRemove');
+           return shouldRemove;
+         })
+         .toList();
+
+    print('Bricks to remove: ${bricksToRemove.length}');
+
+    for (final brick in bricksToRemove) {
+      print('  Removing brick at Y=${brick.position.y.toStringAsFixed(2)}');
+      brick.destroy(); // Use destroy() method instead of manual removal
+    }
+
+    print('Total bricks after removal: ${bricks.length}');
+
+    // Reset burning/game-over state and resume play
+    isGameOverState = false;
+    isBurning = false;
+    burnDuration = 0.0;
+    burnDamageTimer = 0.0;
+    canWatchAd = false;
+
+    // Check if there are still bricks at player level after removal
+    bool stillGameOver = false;
+    for (final brick in bricks) {
+      if (brick.position.y > playerLevel) {
+        stillGameOver = true;
+        print('Warning: Brick still at player level Y=${brick.position.y.toStringAsFixed(2)}');
+        break;
+      }
+    }
+
+    if (stillGameOver) {
+      print('Game still over - bricks still at player level');
+      // Don't resume, keep game paused
+    } else {
+      print('All bricks cleared from player level - resuming game');
+      resumeEngine();
+    }
+    
+    print('Game states reset: isGameOverState=false, isBurning=false, canWatchAd=false');
+    print('Bottom row removed! Removed ${bricksToRemove.length} bricks.');
+    print('Still game over: $stillGameOver');
   }
 
   void refreshTheme() {

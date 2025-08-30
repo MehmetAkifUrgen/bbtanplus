@@ -16,6 +16,13 @@ class Ball extends CircleComponent with CollisionCallbacks, HasGameReference<Cry
   Color originalColor;
   Vector2? aimDirection; // Store aim direction for barrel rotation
   
+  // Anti-stuck system variables
+  Vector2 _lastPosition = Vector2.zero();
+  double _stuckTimer = 0.0;
+  double _lastBrickHitTime = 0.0;
+  static const double _maxStuckTime = 3.0; // Maximum time before forcing ball down
+  static const double _minMovementThreshold = 5.0; // Minimum movement to not be considered stuck
+  
   Ball({
     required Vector2 position,
     required this.speed,
@@ -52,6 +59,9 @@ class Ball extends CircleComponent with CollisionCallbacks, HasGameReference<Cry
     final timeMultiplier = game.gameState.getTimeMultiplier();
     final adjustedVelocity = velocity * timeMultiplier;
     
+    // Check for stuck ball (anti-stuck system)
+    _checkStuckBall(dt);
+    
     // Move the ball
     position += adjustedVelocity * dt;
     
@@ -75,10 +85,48 @@ class Ball extends CircleComponent with CollisionCallbacks, HasGameReference<Cry
   
   void launch(Vector2 direction) {
     velocity = direction.normalized() * speed;
+    // Reset anti-stuck system when launching
+    _lastPosition = position.clone();
+    _stuckTimer = 0.0;
+    _lastBrickHitTime = 0.0;
   }
   
   void stop() {
     velocity = Vector2.zero();
+    // Reset anti-stuck system when stopping
+    _stuckTimer = 0.0;
+    _lastBrickHitTime = 0.0;
+  }
+  
+  void _checkStuckBall(double dt) {
+    // Only check if ball is moving
+    if (velocity.length < 10) {
+      return;
+    }
+    
+    // Calculate movement since last frame
+    final movement = position.distanceTo(_lastPosition);
+    
+    // Update timers
+    _lastBrickHitTime += dt;
+    
+    // Check if ball is stuck (not moving much and hasn't hit bricks recently)
+    if (movement < _minMovementThreshold && _lastBrickHitTime > 1.0) {
+      _stuckTimer += dt;
+      
+      // If stuck for too long, force ball to fall down
+      if (_stuckTimer >= _maxStuckTime) {
+        velocity = Vector2(0, speed); // Force ball to move downward
+        _stuckTimer = 0.0;
+        _lastBrickHitTime = 0.0;
+      }
+    } else {
+      // Reset stuck timer if ball is moving normally
+      _stuckTimer = 0.0;
+    }
+    
+    // Update last position
+    _lastPosition = position.clone();
   }
   
   void activateLaser(double duration) {
@@ -106,6 +154,10 @@ class Ball extends CircleComponent with CollisionCallbacks, HasGameReference<Cry
   }
   
   void _handleBrickCollision(Brick brick, Set<Vector2> intersectionPoints) {
+    // Reset stuck timer when hitting a brick
+    _lastBrickHitTime = 0.0;
+    _stuckTimer = 0.0;
+    
     if (isLaserMode) {
       // Laser mode destroys brick instantly
       brick.destroy();

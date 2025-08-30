@@ -65,6 +65,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   Future<void> _initializeGame() async {
     game = CrystalBreakerGame(selectedLevel: widget.selectedLevel);
     
+    // Set up rewarded ad callback
+    game.onAdWatched = _showRewardedAdDialog;
+    
     // Wait for game to be added to widget tree and loaded
     await Future.delayed(const Duration(milliseconds: 100));
     
@@ -100,6 +103,128 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       // Trigger UI rebuild for updated values
       setState(() {});
     }
+  }
+  
+  void _showRewardedAdDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1a1a2e),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Color(0xFF4facfe), width: 2),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.local_fire_department, color: Colors.red, size: 30),
+              SizedBox(width: 10),
+              Text(
+                'Game Over!',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ],
+          ),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'The bricks have reached your position!',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 15),
+              Text(
+                'Watch an ad to remove the bottom row of bricks and continue playing!',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                game.gameOver();
+                Navigator.of(context).pushReplacementNamed('/score', 
+                  arguments: {'score': game.score});
+              },
+              child: const Text(
+                'Give Up',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _watchRewardedAd();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4facfe),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.play_circle_filled, color: Colors.white),
+                  SizedBox(width: 5),
+                  Text(
+                    'Watch Ad',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  void _watchRewardedAd() {
+    // Simulate watching an ad (in real implementation, integrate with ad SDK)
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const AlertDialog(
+          backgroundColor: Color(0xFF1a1a2e),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: Color(0xFF4facfe)),
+              SizedBox(height: 20),
+              Text(
+                'Loading Ad...',
+                style: TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    
+    // Simulate ad duration
+    Future.delayed(const Duration(seconds: 3), () {
+      Navigator.of(context).pop(); // Close loading dialog
+      
+      // Show ad completion and remove bottom row
+      game.removeBottomBrickRow();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Ad watched! Bottom brick row removed. Game continues!',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Color(0xFF43e97b),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    });
   }
   
   Future<void> _saveAndQuit() async {
